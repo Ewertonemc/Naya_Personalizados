@@ -1,0 +1,394 @@
+:root {
+    --spacing: 1rem;
+    --coral: #FF6B6B;
+    --cinza-escuro: #2D2D2D;
+    --cinza-medio: #6c757d;
+    --cinza-claro: #f8f9fa;
+    --branco: #FFFFFF;
+    --dourado: #D4AF37;
+    --transition-fast: 300ms;
+    --default-border-radius: 4px;
+    
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    color: var(--cinza-escuro);
+    background-color: var(--branco);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Montserrat', sans-serif;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 2.8rem;
+    margin-bottom: 15px;
+}
+
+h2 {
+    font-size: 2.2rem;
+    color: var(--cinza-escuro);
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.destaque {
+    font-family: 'Pacifico', cursive;
+    color: var(--coral);
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background-color: var(--branco);
+    padding: 0px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.container_header{
+    display: flex;
+    width: 90%;
+    margin: 0px 20px 0px 20px;
+    padding: 10px 0 10px 20px;
+}
+
+.menu{
+    position: absolute;
+    align-self: center;
+    right: 20px;
+}
+
+.menu-list {
+    list-style: none;
+    display: flex;
+    justify-content: right;
+    flex-flow: row wrap;
+}
+
+.menu ul li a {
+    display: block;
+    padding: 0.8rem;
+    color: var(---escuro);
+    text-decoration: none;
+    transition: background-color var(--transition-fast) ease-in-out;
+    position: relative;
+
+}
+
+.menu ul li a::after {
+    content: '';
+    position: absolute;
+    bottom: 0.5rem;
+    left: 50%;
+    width: 0;
+    height: 0.2rem;
+    background: var(--coral);
+    transition: all var(--transition-fast) ease-in-out;
+}
+
+.menu ul li a:hover::after {
+    width: 50%;
+    left: 25%;
+}
+
+.logo {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem;
+    font-weight: bold;
+    align-self: center;
+    padding: 10px;            
+}
+
+.logo span {
+    color: var(--coral);
+}
+
+.hero {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://placehold.co/1200x600/2D2D2D/FFFFFF/png?text=Naya+Personalizados');
+    background-size: cover;
+    background-position: center;
+    padding: 120px 0;
+    text-align: center;
+    color: var(--branco);
+}
+
+.hero h1 {
+    color: var(--branco);
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 15px 35px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 10px;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: var(--coral);
+    color: white;
+    border: 2px solid var(--coral);
+}
+
+.btn-primary:hover {
+    background-color: #e55c5c;
+    border-color: #e55c5c;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.btn-outline {
+    background-color: transparent;
+    color: var(--branco);
+    border: 2px solid var(--branco);
+}
+
+.btn-outline:hover {
+    background-color: var(--branco);
+    color: var(--cinza-escuro);
+    transform: translateY(-3px);
+}
+
+.products {
+    padding: 80px 0;
+    background-color: var(--cinza-claro);
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.product-card {
+    background-color: var(--branco);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+    border-top: 4px solid var(--coral);
+}
+
+.product-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.product-img {
+    height: 220px;
+    background: linear-gradient(45deg, var(--cinza-escuro), var(--cinza-medio));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-style: italic;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-img::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.product-content {
+    padding: 25px;
+    text-align: center;
+}
+
+.product-content h3 {
+    color: var(--cinza-escuro);
+    margin-bottom: 15px;
+}
+
+.price {
+    font-size: 1.3rem;
+    color: var(--coral);
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+.product-examples {
+    padding: 80px 0;
+    background-color: var(--branco);
+}
+
+.examples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.example-item {
+    text-align: center;
+    padding: 30px 20px;
+    border-radius: 10px;
+    background-color: var(--cinza-claro);
+    transition: all 0.3s;
+    border-left: 3px solid var(--coral);
+}
+
+.example-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.example-icon {
+    font-size: 2.5rem;
+    color: var(--coral);
+    margin-bottom: 15px;
+}
+
+.features {
+    padding: 80px 0;
+    background-color: var(--cinza-claro);
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.feature-item {
+    text-align: center;
+    padding: 30px;
+}
+
+.feature-icon {
+    font-size: 2.8rem;
+    color: var(--coral);
+    margin-bottom: 20px;
+}
+
+footer {
+    background-color: var(--cinza-escuro);
+    color: var(--branco);
+    padding: 60px 0 30px;
+    text-align: center;
+}
+
+.footer-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 10px;
+    text-align: left;
+    margin-bottom: 40px;
+}
+
+.footer-logo {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+}
+
+.footer-logo span {
+    color: var(--coral);
+}
+
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.social-links a {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    text-decoration: none;
+}
+
+.social-links a:hover {
+    background-color: #FF6B6B;
+    transform: translateY(-3px);
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2.2rem;
+    }
+    
+    h2 {
+        font-size: 1.8rem;
+    }
+    
+    .container_header{
+        display: flex;
+        flex-flow: row wrap;
+    }
+
+    .menu{
+        position: inherit;
+        right: 20px;
+    }
+
+    .menu-list {
+    list-style: none;
+    display: flex;
+    justify-content: left;
+    flex-flow: row wrap;
+    }
+    
+    .logo {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.5rem;
+    font-weight: bold;
+    align-self: center;
+    padding: 10px;
+    
+    }
+
+    .hero {
+        padding: 80px 0;
+    }
+    
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+    
+    .examples-grid, .features-grid, .footer-grid {
+        grid-template-columns: 1fr;
+    }
+}
