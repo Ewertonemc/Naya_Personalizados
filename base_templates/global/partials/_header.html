@@ -1,40 +1,39 @@
+{% load static %}
 <header class="header">
-        <div class="container_header">
-            <img class="img_logo" src="base_static/global/img/naya.png" width="100">
-            <div class="logo">Naya <span>Personalizados</span></div>
+    <img class="img_logo" src="{% static 'global/img/naya.png'%}" width="100">
+    <div class="logo">Naya <span>Personalizados</span></div>
+    <div class="container_header">
+        
         
 
-            <nav class="menu">
-                <ul class="menu-list">
-                        <li class="menu-item">
-
-                            <a href="{% url "contact:create" %}" class="menu-link">
-                                Create
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="{% url "contact:user_update" %}" class="menu-link">
-                                Profile
-                            </a>
-                        </li>
-                        </li>
-                        <li class="menu-item">
-                            <a href="{% url "contact:logout" %}" class="menu-link">
-                                Logout
-                            </a>
-                        </li>
-                        <li class="menu-item">
-
-                            <a href="{% url "contact:login" %}" class="menu-link">
-                                Login
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="{% url "contact:register" %}" class="menu-link">
-                                Register
-                            </a>
-                        </li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+        <nav class="menu">
+            <ul class="menu-list">
+                <li class="menu-item">
+                    <a href="#" class="menu-link">
+                        Home
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link">
+                        Produtos
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link">
+                        Galeria
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link">
+                        Login
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link">
+                        Register
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>

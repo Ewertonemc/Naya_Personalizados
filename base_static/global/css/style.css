@@ -54,38 +54,40 @@ h2 {
 }
 
 header {
+    display: flex;
     background-color: var(--branco);
-    padding: 0px 0;
+    padding: 10px 0 10px 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     position: sticky;
     top: 0;
     z-index: 100;
+    flex-flow: row wrap;
 }
 
 .container_header{
     display: flex;
-    width: 90%;
-    margin: 0px 20px 0px 20px;
-    padding: 10px 0 10px 20px;
+    justify-content: center;
+    align-items: last baseline;
+    width: 100%;
 }
 
 .menu{
+    display: flex;
     position: absolute;
-    align-self: center;
-    right: 20px;
+    padding: 0 4px;
+    
 }
 
 .menu-list {
     list-style: none;
     display: flex;
-    justify-content: right;
     flex-flow: row wrap;
 }
 
 .menu ul li a {
     display: block;
-    padding: 0.8rem;
-    color: var(---escuro);
+    padding: 2.5rem;
+    color: var(--cinza-escuro);
     text-decoration: none;
     transition: background-color var(--transition-fast) ease-in-out;
     position: relative;
@@ -95,7 +97,7 @@ header {
 .menu ul li a::after {
     content: '';
     position: absolute;
-    bottom: 0.5rem;
+    bottom: 0.3rem;
     left: 50%;
     width: 0;
     height: 0.2rem;
@@ -112,8 +114,7 @@ header {
     font-family: 'Montserrat', sans-serif;
     font-size: 2rem;
     font-weight: bold;
-    align-self: center;
-    padding: 10px;            
+    padding: 0 10px;
 }
 
 .logo span {
