@@ -8,11 +8,11 @@
     {% if user.is_authenticated %}
       <p>
         Você fez login como {{ user.username }}
-        Clique <a href="{% url "contact:logout" %}">aqui</a>
+        Clique <a href="{% url "naya_site:logout" %}">aqui</a>
         para sair
       </p>
     {% else %}
-      {% include "contact/partials/_user-form.html" %}
+      {% include "naya_site/partials/_user-form.html" %}
     {% endif %}
   </div>
 {% endblock content %}

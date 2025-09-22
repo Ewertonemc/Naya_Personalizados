@@ -1,0 +1,77 @@
+{% extends "global/base.html" %}
+
+{% block content %}
+    <div class="search">
+        <form 
+        action="{% url "naya_site:search" %}" 
+        method="GET"
+        >
+            <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Search" 
+            id="search" 
+            name="q"
+            value="{{ request.GET.q.strip }}"
+            >
+        </form>
+    </div>
+
+    <a href="{% url 'naya_site:create' %}" class="btn btn-add">+ Novo Produto</a>
+    
+    {% if page_obj %}        
+        <div class="responsive-table">            
+            
+            <table class="stock-table">
+                <caption class="table-caption">
+                    Estoque
+                </caption>
+
+                <thead>
+                    <tr class="table-row table-row-header">
+                        <th class="table-header">Imagem</th>                    
+                        <th class="table-header">Nome</th>
+                        <th class="table-header">QTD</th>
+                        <th class="table-header">V. Unitário</th>
+                        <th class="table-header">Total</th>
+                        <th class="table-header">Categoria</th>
+                    </tr>            
+                </thead>
+
+                <tbody>
+                    {% for product in page_obj %}
+                        <tr class="table-row">
+                            <td class="table-cel">
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}"
+                                    alt="{{ product.name }}"
+                                    class="product-img">
+                                {% else %}
+                                    <span class="text-muted">No Image</span>
+                                {% endif %}
+                                </a>
+                            </td>
+                            <td class="table-cel"><a 
+                                class="table-link" 
+                                href="{% url 'naya_site:product' product.id %}"
+                                >
+                                 {{ product.name }} 
+                                </a>
+                            </td>
+                            <td class="table-cel"> {{ product.quantity }} </td>
+                            <td class="table-cel"> {{ product.unit_value }} </td>
+                            <td class="table-cel"> {{ product.total_value }} </td>
+                            <td class="table-cel"> {{ product.category }} </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="produtos">
+            <h1 class="single-product-name">
+                Nenhum produto encontrado.
+            </h1>
+            </div>
+    {% endif %}
+{% endblock content %}
