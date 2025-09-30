@@ -1,43 +1,32 @@
-{% extends 'global/base.html' %}
+{% extends 'global/base.html' %} {% block content %}
+<div class="single-product">
+  <h1 class="single-product-name">{{ product.name }}</h1>
+  <p><b>ID: </b> {{ product.id }}</p>
+  <p><b>Name: </b> {{ product.name }}</p>
+  <p><b>Quantidade: </b> {{ product.quantity }}</p>
+  <p><b>Quantidade minima: </b> {{ product.minimum_quantity }}</p>
+  <p><b>Valor unitário: </b> R$ {{ product.unit_value }}</p>
+  <p><b>Category: </b> {{ product.category.name }}</p>
 
-{% block content %}
-    <div class="single-product">
-        <h1 class="single-product-name">
-            {{ product.name }}
-        </h1>
-        <p><b>ID: </b> {{ product.id }} </p>
-        <p><b>Name: </b> {{ product.name }} </p>
-        <p><b>Quantidade: </b> {{ product.quantity }} </p>
-        <p><b>Quantidade minima: </b> {{ product.minimum_quantity }} </p>
-        <p><b>Valor unitário: </b> R$ {{ product.unit_value }} </p>
-        <p><b>Category: </b> {{ product.category.name }} </p>
+  {% if product.image %}
+  <p>
+    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="src" />
+  </p>
+  {% endif %}
 
-        {% if product.image %}
-            <p>
-                <img src="{{ product.image.url }}" 
-                alt="{{ product.name }}" 
-                class="src">
-            </p>
-        {% endif %}
+  <div class="product-links">
+    <a class="btn btn-link" href="{% url 'naya_site:update' product.id %}"
+      >Update</a
+    >
 
-        <div class="product-links">
-            <a class='btn btn-link' 
-            href="{% url 'naya_site:update' product.id %}">Update</a>
-
-            <form action="{% url 'naya_site:delete' product.id %}" 
-                method="POST">
-                {% csrf_token %}
-
-                {% if confirmation == 'no' %}
-                    <input type="hidden" name="confirmation" 
-                    value="yes">
-                    <button class="btn btn-link btn-delete" 
-                    type="submit">Confirma?</button>
-                    {% else %}
-                    <button class="btn btn-link btn-delete" 
-                    type="submit">Delete</button>
-                {% endif %}
-            </form>
-        </div>
-    </div>
+    <form action="{% url 'naya_site:delete' product.id %}" method="POST">
+      {% csrf_token %} {% if confirmation == 'no' %}
+      <input type="hidden" name="confirmation" value="yes" />
+      <button class="btn btn-link btn-delete" type="submit">Confirma?</button>
+      {% else %}
+      <button class="btn btn-link btn-delete" type="submit">Delete</button>
+      {% endif %}
+    </form>
+  </div>
+</div>
 {% endblock content %}

@@ -1,0 +1,33 @@
+:root {
+    --gap: 3rem;
+    --spacing: 1rem;
+    --link-dark-color: rgb(20, 108, 67);
+    --link-light-color: #3fa877;
+    --coral: #FF6B6B;
+    --cinza-escuro: #2D2D2D;
+    --cinza-medio: #6c757d;
+    --cinza-claro: #f8f9fa;
+    --branco: #FFFFFF;
+    --clr-white: rgb(245, 245, 255);
+    --clr-black: rgb(0, 0, 30);
+    --clr-light-gray: rgb(230, 230, 245);
+    --clr-dark-shadow-5: rgba(0, 0, 10, 5%);
+    --clr-dark-shadow-10: rgba(0, 0, 10, 10%);
+    --clr-dark-shadow-20: rgba(0, 0, 10, 20%);
+    --clr-light-shadow-5: rgba(200, 200, 255, 5%);
+    --clr-light-shadow-10: rgba(200, 200, 255, 10%);
+    --clr-light-shadow-20: rgba(200, 200, 255, 20%);
+    --main-page-width: 120rem;
+    --table-min-width: 60rem;
+    --biggest-font-size: 5rem;
+    --bigger-font-size: 4rem;
+    --big-font-size: 3.2rem;
+    --medium-font-size: 2.4rem;
+    --small-font-size: 1.9rem;
+    --smaller-font-size: 1.4rem;
+    --smallest-font-size: 1.2rem;
+    --transition-fast: 300ms;
+    --transition-medium: 600ms;
+    --transition-slow: 1s;
+    --default-border-radius: 4px;
+}
