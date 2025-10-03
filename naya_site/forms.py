@@ -3,8 +3,11 @@ from django.contrib.auth import password_validation
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 
-from . import models
+from naya_site import models
+from .models import UserProfile, State
+import re
 
 
 class ProductForm(forms.ModelForm):
@@ -26,11 +29,35 @@ class ProductForm(forms.ModelForm):
 
 
 class RegisterForm(UserCreationForm):
+    cpf = forms.CharField(
+        max_length=14,
+        required=True,
+        help_text='Formato: 000.000.000-00',
+        validators=[
+            RegexValidator(
+                regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
+                message='CPF deve estar no formato: 000.000.000-00'
+            )
+        ]
+    )
+
+    cep = forms.CharField(max_length=9, validators=[
+                          RegexValidator(regex=r'^\d{5}-\d{3}$')])
+    logradouro = forms.CharField(max_length=200)
+    numero = forms.CharField(max_length=10)
+    complemento = forms.CharField(max_length=100, required=False)
+    bairro = forms.CharField(max_length=100)
+    cidade = forms.CharField(max_length=100)
+    state = forms.ChoiceField(
+        choices=[('', 'Selecione o estado')] + State.STATE_CHOICES,
+        required=False,
+    )
+
     class Meta:
         model = User
         fields = (
-            'first_name', 'last_name', 'email',
-            'username', 'password1', 'password2',
+            'first_name', 'last_name', 'email', 'username', 'cpf', 'state',
+            'cidade', 'logradouro', 'cep', 'numero', 'complemento', 'bairro',
         )
 
     def clean_email(self):
@@ -94,21 +121,120 @@ class RegisterUpdateForm(forms.ModelForm):
         required=False,
     )
 
+    cpf = forms.CharField(
+        max_length=14,
+        required=True,
+        help_text='Formato: 000.000.000-00',
+        validators=[
+            RegexValidator(
+                regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
+                message='CPF deve estar no formato: 000.000.000-00'
+            )
+        ]
+    )
+
+    cep = forms.CharField(max_length=9, validators=[
+                          RegexValidator(regex=r'^\d{5}-\d{3}$')])
+    logradouro = forms.CharField(max_length=200)
+    numero = forms.CharField(max_length=10)
+    complemento = forms.CharField(max_length=100, required=False)
+    bairro = forms.CharField(max_length=100)
+    cidade = forms.CharField(max_length=100)
+    state = forms.ModelChoiceField(
+        queryset=State.objects.all().order_by('name'),
+        required=False,
+        empty_label="Selecione o estado"
+    )
+
     class Meta:
         model = User
         fields = (
-            'first_name', 'last_name', 'email',
-            'username',
+            'first_name', 'last_name', 'email', 'username', 'cpf', 'state',
+            'cidade', 'logradouro', 'cep', 'numero', 'complemento', 'bairro',
         )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.instance and hasattr(self.instance, 'profile'):
+            profile = self.instance.profile
+            self.fields['cpf'].initial = profile.cpf
+            self.fields['cep'].initial = profile.cep
+            self.fields['logradouro'].initial = profile.logradouro
+            self.fields['numero'].initial = profile.numero
+            self.fields['complemento'].initial = profile.complemento
+            self.fields['bairro'].initial = profile.bairro
+            self.fields['cidade'].initial = profile.cidade
+            self.fields['state'].initial = profile.state
+
+    def clean_cpf(self):
+        cpf = self.cleaned_data.get('cpf')
+        if cpf:
+            # Remove formatação
+            cpf_clean = re.sub(r'[^\d]', '', cpf)
+
+            # Verifica se já existe
+            if UserProfile.objects.filter(cpf=cpf).exists():
+                # Se estiver editando, verifica se é o mesmo usuário
+                if self.instance and self.instance.pk:
+                    try:
+                        profile = UserProfile.objects.get(user=self.instance)
+                        if profile.cpf != cpf:
+                            raise forms.ValidationError('CPF já cadastrado')
+                    except UserProfile.DoesNotExist:
+                        raise forms.ValidationError('CPF já cadastrado')
+                else:
+                    raise forms.ValidationError('CPF já cadastrado')
+
+            # Validação do CPF
+            if not self.validar_cpf(cpf_clean):
+                raise forms.ValidationError('CPF inválido')
+
+        return cpf
+
+    def validar_cpf(self, cpf):
+        """Validação de CPF"""
+        if len(cpf) != 11:
+            return False
+
+        if cpf == cpf[0] * 11:
+            return False
+
+        # Cálculo dos dígitos verificadores
+        def calcular_digito(cpf, peso_inicial):
+            soma = 0
+            for i, digito in enumerate(cpf[:peso_inicial-1]):
+                soma += int(digito) * (peso_inicial - i)
+            resto = soma % 11
+            return 0 if resto < 2 else 11 - resto
+
+        digito1 = calcular_digito(cpf, 10)
+        digito2 = calcular_digito(cpf, 11)
+
+        return int(cpf[9]) == digito1 and int(cpf[10]) == digito2
 
     def save(self, commit=True):
         cleaned_data = self.cleaned_data
-        user = super().save(commit=False)
+        user = super().save(commit=commit)
         password = cleaned_data.get('password1')
         if password:
             user.set_password(password)
+        if hasattr(user, 'profile'):
+            profile = user.profile
+        else:
+            profile = UserProfile(user=user)
+
+        profile.cpf = self.cleaned_data['cpf']
+        profile.cep = self.cleaned_data['cep']
+        profile.logradouro = self.cleaned_data['logradouro']
+        profile.numero = self.cleaned_data['numero']
+        profile.complemento = self.cleaned_data['complemento']
+        profile.bairro = self.cleaned_data['bairro']
+        profile.cidade = self.cleaned_data['cidade']
+        profile.state = self.cleaned_data['state']
+
         if commit:
-            user.save()
+            profile.save()
         return user
 
     def clean(self):

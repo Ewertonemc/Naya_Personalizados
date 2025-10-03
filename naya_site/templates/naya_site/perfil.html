@@ -1,0 +1,23 @@
+{% extends 'global/base.html' %} 
+{% block content %}
+<div class="single-product">
+    <h1 class="single-product-name">{{ user.first_name }} {{ user.last_name }}</h1>
+    <p><b>ID: </b> {{ user.id }}</p>
+    <p><b>Name: </b> {{ user.first_name }} {{ user.last_name }}</p>        
+    <p><b>CPF: </b> {{ user.profile.cpf }}</p>
+    <p><b>ESTADO: </b> {{ user.profile.state.name }}</p>
+    <p><b>CIDADE: </b> {{ user.profile.cidade }}</p>
+    <p><b>LOGRADOURO: </b> {{ user.profile.logradouro }}, {{ user.profile.numero }}</p>
+    <p><b>BAIRRO: </b> {{ user.userprofile.bairro }}</p> 
+    <p><b>CEP: </b> {{ user.profile.cep }}</p>
+    <p><b>COMPLEMENTO: </b> {{ user.profile.complemento }}</p>
+    
+      
+    <div class="product-links">
+        <a class="btn btn-link" href="{% url 'naya_site:user_update' %}">Update</a>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+

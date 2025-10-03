@@ -11,11 +11,6 @@ body {
     line-height: 1.6;
 }
 
-[vw] [vw-access-button] .vp-access-button {
-    width: 40%!important;
-    border-radius: 50px!important;
-}
-
 h1, h2, h3, h4 {
     font-family: 'Montserrat', sans-serif;
     margin-bottom: 20px;
@@ -33,6 +28,15 @@ h2 {
     margin-bottom: 40px;
 }
 
+.form-group img {
+    width: 400px;
+    height: auto;
+    border-radius: 20px;
+    margin-top: 30px;
+    align-self: center;
+
+}
+
 .destaque {
     font-family: 'Pacifico', cursive;
     color: var(--coral);
@@ -46,8 +50,9 @@ h2 {
 }
 
 .responsive-table {
-  width: 100%;
+  width: 90%;
   overflow-x: auto;
+  margin: auto;
 }
 
 .stock-table {

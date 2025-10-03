@@ -1,18 +1,17 @@
 {% extends 'global/base.html' %}
-
 {% block content %}
-  <div class="form-wrapper">
+    <div class="form-wrapper">
 
-    <h2>Login</h2>
-    
-    {% if user.is_authenticated %}
-      <p>
-        Você fez login como {{ user.username }}
-        Clique <a href="{% url "naya_site:logout" %}">aqui</a>
-        para sair
-      </p>
-    {% else %}
-      {% include "naya_site/partials/_user-form.html" %}
-    {% endif %}
-  </div>
+        <h2>Login</h2>
+        
+        {% if user.is_authenticated %}
+        <p>
+            Você fez login como {{ user.username }}
+            Clique <a href="{% url "naya_site:logout" %}">aqui</a>
+            para sair
+        </p>
+        {% else %}
+        {% include "naya_site/partials/_user-form.html" %}
+        {% endif %}
+    </div>
 {% endblock content %}

@@ -19,3 +19,20 @@ class productAdmin(admin.ModelAdmin):
 class CategoryAdmin(admin.ModelAdmin):
     list_display = 'name',
     ordering = ('-id',)
+
+
+@admin.register(models.State)
+class StateAdmin(admin.ModelAdmin):
+    list_display = 'name',
+    ordering = ('-id',)
+
+
+@admin.register(models.UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'cpf', 'state', 'cidade', 'logradouro',
+                    'cep', 'numero', 'complemento', 'bairro',)
+    ordering = ('-id',)
+    search_fields = ('user__username', 'cpf', 'cidade', 'state',)
+    list_per_page = 10
+    list_max_show_all = 50
+    list_display_links = ('user',)
