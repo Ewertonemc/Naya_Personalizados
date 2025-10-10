@@ -1,0 +1,192 @@
+{% extends 'global/base.html' %} 
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-gear"></i> Painel Administrativo
+        </h1>
+    </div>
+</div>
+
+<!-- Cards de Status -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-danger status-card h-100" onclick="scrollToSection('aguardando-resposta')">
+            <div class="card-body text-center">
+                <i class="bi bi-clock-history display-4"></i>
+                <h2 class="mt-3">{{ aguardando_resposta }}</h2>
+                <p class="mb-0">Aguardando Resposta</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning status-card h-100" onclick="scrollToSection('aguardando-cliente')">
+            <div class="card-body text-center">
+                <i class="bi bi-person-check display-4"></i>
+                <h2 class="mt-3">{{ aguardando_cliente }}</h2>
+                <p class="mb-0">Aguardando Cliente</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success status-card h-100" onclick="scrollToSection('aprovados')">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle display-4"></i>
+                <h2 class="mt-3">{{ aprovados }}</h2>
+                <p class="mb-0">Aprovados</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Clientes -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people"></i> Clientes</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Endereço</th>
+                        <th>Orçamentos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                    <tr>
+                        <td>{{ cliente.get_full_name|default:cliente.username }}</td>
+                        <td>{{ cliente.profile.telefone|default:"Não informado" }}</td>
+                        <td>{{ cliente.profile.endereco|default:"Não informado" }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ cliente.orcamento_set.count }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">Nenhum cliente encontrado</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Orçamentos Aguardando Resposta -->
+<div class="card mb-4" id="aguardando-resposta">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history"></i> 
+            Orçamentos Aguardando Resposta ({{ aguardando_resposta }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% for orcamento in orcamentos_aguardando %}
+            <div class="orcamento-item vermelho">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>ID: {{ orcamento.id|truncatechars:8 }}</strong>
+                        <div class="cliente-info text-muted">
+                            Cliente: {{ orcamento.cliente.get_full_name|default:orcamento.cliente.username }}
+                        </div>
+                        <div class="cliente-info text-muted">
+                            Entrega até: {{ orcamento.data_maxima_entrega|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'orcamentos:admin_responder' orcamento.id %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-reply"></i> Responder
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted text-center">Nenhum orçamento aguardando resposta.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Orçamentos Aguardando Cliente -->
+<div class="card mb-4" id="aguardando-cliente">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+            <i class="bi bi-person-check"></i> 
+            Aguardando Resposta do Cliente ({{ aguardando_cliente }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% for orcamento in orcamentos_cliente %}
+            <div class="orcamento-item amarelo">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>ID: {{ orcamento.id|truncatechars:8 }}</strong>
+                        <div class="cliente-info text-muted">
+                            Cliente: {{ orcamento.cliente.get_full_name|default:orcamento.cliente.username }}
+                        </div>
+                        <div class="cliente-info text-muted">
+                            Valor: R$ {{ orcamento.get_valor_final|floatformat:2 }}
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'orcamentos:detalhe_orcamento' orcamento.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> Visualizar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted text-center">Nenhum orçamento aguardando cliente.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Orçamentos Aprovados -->
+<div class="card mb-4" id="aprovados">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-check-circle"></i> 
+            Orçamentos Aprovados ({{ aprovados }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% for orcamento in orcamentos_aprovados %}
+            <div class="orcamento-item verde">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>ID: {{ orcamento.id|truncatechars:8 }}</strong>
+                        <div class="cliente-info text-muted">
+                            Cliente: {{ orcamento.cliente.get_full_name|default:orcamento.cliente.username }}
+                        </div>
+                        <div class="cliente-info text-muted">
+                            Valor: R$ {{ orcamento.get_valor_final|floatformat:2 }} | 
+                            Entrega: {{ orcamento.data_prevista_entrega|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'orcamentos:detalhe_orcamento' orcamento.id %}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-eye"></i> Visualizar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted text-center">Nenhum orçamento aprovado.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function scrollToSection(sectionId) {
+    document.getElementById(sectionId).scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+</script>
+{% endblock %}

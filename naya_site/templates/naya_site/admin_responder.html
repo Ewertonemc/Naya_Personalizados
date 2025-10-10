@@ -1,0 +1,250 @@
+{% extends 'global/base.html' %} {% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-reply"></i> Responder Orçamento
+            <small class="text-muted">#{{ orcamento.id|truncatechars:8 }}</small>
+        </h1>
+    </div>
+</div>
+
+<!-- Informações do Cliente -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-person"></i> Informações do Cliente</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Nome:</strong> {{ orcamento.cliente.get_full_name|default:orcamento.cliente.username }}</p>
+                <p><strong>Email:</strong> {{ orcamento.cliente.email }}</p>
+                <p><strong>Data do Orçamento:</strong> {{ orcamento.data_criacao|date:"d/m/Y H:i" }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Data Máxima Entrega:</strong> {{ orcamento.data_maxima_entrega|date:"d/m/Y" }}</p>
+                <p><strong>Status:</strong> 
+                    <span class="badge bg-warning">{{ orcamento.get_status_display }}</span>
+                </p>
+            </div>
+        </div>
+        {% if orcamento.observacoes_cliente %}
+        <div class="mt-3">
+            <strong>Observações do Cliente:</strong>
+            <div class="bg-light p-3 rounded mt-2">{{ orcamento.observacoes_cliente|linebreaks }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="resposta-form">
+    {% csrf_token %}
+    
+    <!-- Itens Solicitados -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-box"></i> Itens Solicitados</h5>
+        </div>
+        <div class="card-body">
+            {% for item in orcamento.itens.all %}
+                <div class="item-card">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="produto-info">
+                                {% if item.produto.imagem %}
+                                    <img src="{{ item.produto.imagem.url }}" class="preview-imagem mb-2" alt="{{ item.produto.nome }}">
+                                {% endif %}
+                                <h6>{{ item.produto.nome }}</h6>
+                                <p class="text-muted mb-1">Categoria: {{ item.produto.categoria.nome }}</p>
+                                <p class="text-muted mb-1">Quantidade: {{ item.quantidade }}</p>
+                                <p class="text-muted">Preço Base: R$ {{ item.produto.preco_base|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h6>Personalização Solicitada:</h6>
+                            <div class="bg-light p-3 rounded mb-3">
+                                {{ item.descricao_personalizacao|linebreaks }}
+                            </div>
+                            
+                            <!-- Arquivos do Cliente -->
+                            {% if item.arquivos.all %}
+                                <h6>Arquivos Enviados pelo Cliente:</h6>
+                                <div class="mb-3">
+                                    {% for arquivo in item.arquivos.all %}
+                                        {% if arquivo.tipo == 'cliente' %}
+                                            <a href="{{ arquivo.arquivo.url }}" target="_blank" class="arquivo-cliente">
+                                                <i class="bi bi-file-earmark"></i> {{ arquivo.nome_original }}
+                                            </a>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Preço e Upload de Arquivos da Empresa -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Preço Unitário (R$)</label>
+                                    <input type="number" step="0.01" min="0" 
+                                           name="item_{{ item.id }}_preco" 
+                                           class="form-control preco-input" 
+                                           data-quantidade="{{ item.quantidade }}"
+                                           value="{{ item.preco_unitario|default:'' }}"
+                                           required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Total do Item</label>
+                                    <input type="text" class="form-control total-item" 
+                                           id="total_{{ item.id }}" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <label class="form-label">Imagens/Arquivos da Empresa</label>
+                                <input type="file" multiple 
+                                       name="item_{{ item.id }}_arquivos" 
+                                       class="form-control"
+                                       accept="image/*,.pdf,.doc,.docx">
+                                <div class="form-text">Envie as imagens desenvolvidas ou arquivos relacionados</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Informações Gerais da Resposta -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Informações da Resposta</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        {{ orcamento_form.valor_frete }}
+                        <label for="{{ orcamento_form.valor_frete.id_for_label }}">Valor do Frete (R$)</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        {{ orcamento_form.data_prevista_entrega }}
+                        <label for="{{ orcamento_form.data_prevista_entrega.id_for_label }}">Data Prevista de Entrega</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-floating mb-3">
+                {{ orcamento_form.observacoes_empresa }}
+                <label for="{{ orcamento_form.observacoes_empresa.id_for_label }}">Observações da Empresa</label>
+            </div>
+            
+            <div class="form-check">
+                {{ orcamento_form.nao_possivel_prazo }}
+                <label class="form-check-label" for="{{ orcamento_form.nao_possivel_prazo.id_for_label }}">
+                    Não será possível atender este prazo
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo Financeiro -->
+    <div class="total-section mb-4">
+        <h5><i class="bi bi-calculator"></i> Resumo Financeiro</h5>
+        <div class="row">
+            <div class="col-md-8">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <td><strong>Subtotal dos Itens:</strong></td>
+                            <td class="text-end"><strong>R$ <span id="subtotal-itens">0,00</span></strong></td>
+                        </tr>
+                        <tr>
+                            <td>Frete:</td>
+                            <td class="text-end">R$ <span id="valor-frete">0,00</span></td>
+                        </tr>
+                        <tr class="table-success">
+                            <td><strong>Total Geral:</strong></td>
+                            <td class="text-end"><strong>R$ <span id="total-geral">0,00</span></strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="d-flex justify-content-between">
+        <a href="{% url 'orcamentos:admin_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+        <button type="submit" class="btn btn-success btn-lg">
+            <i class="bi bi-send"></i> Enviar Resposta
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Calcular totais automaticamente
+function calcularTotais() {
+    let subtotal = 0;
+    
+    // Calcular total de cada item
+    document.querySelectorAll('.preco-input').forEach(input => {
+        const preco = parseFloat(input.value) || 0;
+        const quantidade = parseInt(input.dataset.quantidade);
+        const totalItem = preco * quantidade;
+        
+        // Atualizar campo total do item
+        const itemId = input.name.match(/item_(\d+)_preco/)[1];
+        const totalField = document.getElementById(`total_${itemId}`);
+        totalField.value = `R$ ${totalItem.toFixed(2)}`;
+        
+        subtotal += totalItem;
+    });
+    
+    // Calcular frete
+    const frete = parseFloat(document.getElementById('{{ orcamento_form.valor_frete.id_for_label }}').value) || 0;
+    
+    // Atualizar totais na tela
+    document.getElementById('subtotal-itens').textContent = subtotal.toFixed(2).replace('.', ',');
+    document.getElementById('valor-frete').textContent = frete.toFixed(2).replace('.', ',');
+    document.getElementById('total-geral').textContent = (subtotal + frete).toFixed(2).replace('.', ',');
+}
+
+// Eventos para recalcular
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('preco-input') || e.target.id === '{{ orcamento_form.valor_frete.id_for_label }}') {
+        calcularTotais();
+    }
+});
+
+// Validação do formulário
+document.getElementById('resposta-form').addEventListener('submit', function(e) {
+    let preenchePrecos = true;
+    
+    document.querySelectorAll('.preco-input').forEach(input => {
+        if (!input.value || parseFloat(input.value) <= 0) {
+            preenchePrecos = false;
+        }
+    });
+    
+    if (!preenchePrecos) {
+        e.preventDefault();
+        alert('Preencha o preço unitário para todos os itens.');
+        return false;
+    }
+    
+    const dataPrevista = document.getElementById('{{ orcamento_form.data_prevista_entrega.id_for_label }}').value;
+    if (!dataPrevista) {
+        e.preventDefault();
+        alert('Informe a data prevista de entrega.');
+        return false;
+    }
+});
+
+// Calcular totais ao carregar a página
+document.addEventListener('DOMContentLoaded', calcularTotais);
+</script>
+{% endblock %}

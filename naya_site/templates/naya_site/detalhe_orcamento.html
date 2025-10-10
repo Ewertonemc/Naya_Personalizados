@@ -1,0 +1,233 @@
+{% extends 'global/base.html' %} 
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-file-text"></i> Orçamento 
+            <code>#{{ orcamento.id|truncatechars:8 }}</code>
+        </h1>
+    </div>
+</div>
+
+<!-- Status e Informações Gerais -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações Gerais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Data de Criação:</strong> {{ orcamento.data_criacao|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Data Máxima Entrega:</strong> {{ orcamento.data_maxima_entrega|date:"d/m/Y" }}</p>
+                        {% if orcamento.data_prevista_entrega %}
+                        <p><strong>Data Prevista Entrega:</strong> {{ orcamento.data_prevista_entrega|date:"d/m/Y" }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Cliente:</strong> {{ orcamento.cliente.get_full_name|default:orcamento.cliente.username }}</p>
+                        <p><strong>Email:</strong> {{ orcamento.cliente.email }}</p>
+                        {% if orcamento.valor_total > 0 %}
+                        <p><strong>Valor Total:</strong> R$ {{ orcamento.get_valor_final|floatformat:2 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if orcamento.observacoes_cliente %}
+                <div class="mt-3">
+                    <strong>Observações do Cliente:</strong>
+                    <div class="bg-light p-3 rounded mt-2">{{ orcamento.observacoes_cliente|linebreaks }}</div>
+                </div>
+                {% endif %}
+                
+                {% if orcamento.observacoes_empresa %}
+                <div class="mt-3">
+                    <strong>Observações da Empresa:</strong>
+                    <div class="bg-success bg-opacity-10 p-3 rounded mt-2">{{ orcamento.observacoes_empresa|linebreaks }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-flag"></i> Status</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if orcamento.status == 'aguardando_resposta' %}
+                    <span class="badge bg-warning status-badge">Aguardando Resposta</span>
+                {% elif orcamento.status == 'aguardando_cliente' %}
+                    <span class="badge bg-info status-badge">Aguardando Sua Resposta</span>
+                {% elif orcamento.status == 'em_producao' %}
+                    <span class="badge bg-primary status-badge">Em Produção</span>
+                {% elif orcamento.status == 'rejeitado' %}
+                    <span class="badge bg-danger status-badge">Rejeitado</span>
+                {% elif orcamento.status == 'finalizado' %}
+                    <span class="badge bg-success status-badge">Finalizado</span>
+                {% endif %}
+                
+                {% if orcamento.status == 'aguardando_cliente' %}
+                <div class="mt-3">
+                    <a href="{% url 'naya_site:responder_orcamento' orcamento.id %}" class="btn btn-success">
+                        <i class="bi bi-reply"></i> Responder
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Itens do Orçamento -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-box"></i> Itens Solicitados</h5>
+    </div>
+    <div class="card-body">
+        {% for item in orcamento.itens.all %}
+            <div class="item-detalhes">
+                <div class="row">
+                    <div class="col-md-3">
+                        {% if item.produto.imagem %}
+                            <img src="{{ item.produto.imagem.url }}" class="img-fluid rounded" alt="{{ item.produto.nome }}">
+                        {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
+                                <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9">
+                        <h6>{{ item.produto.nome }}</h6>
+                        <p class="text-muted mb-2">Categoria: {{ item.produto.categoria.nome }}</p>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p><strong>Quantidade:</strong> {{ item.quantidade }}</p>
+                                {% if item.preco_unitario > 0 %}
+                                <p><strong>Preço Unitário:</strong> R$ {{ item.preco_unitario|floatformat:2 }}</p>
+                                <p><strong>Total do Item:</strong> R$ {{ item.preco_total|floatformat:2 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Personalização Solicitada:</strong>
+                            <div class="bg-light p-3 rounded mt-2">{{ item.descricao_personalizacao|linebreaks }}</div>
+                        </div>
+                        
+                        <!-- Arquivos -->
+                        {% if item.arquivos.all %}
+                            <div class="mb-3">
+                                <strong>Arquivos:</strong>
+                                <div class="mt-2">
+                                    {% for arquivo in item.arquivos.all %}
+                                        <a href="{{ arquivo.arquivo.url }}" target="_blank" 
+                                           class="arquivo-link {% if arquivo.tipo == 'empresa' %}arquivo-empresa{% endif %}">
+                                            <i class="bi bi-file-earmark"></i> 
+                                            {{ arquivo.nome_original }}
+                                            {% if arquivo.tipo == 'empresa' %}
+                                                <small>(Empresa)</small>
+                                            {% else %}
+                                                <small>(Cliente)</small>
+                                            {% endif %}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Resumo Financeiro -->
+{% if orcamento.valor_total > 0 %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-calculator"></i> Resumo Financeiro</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <td>Subtotal dos Itens:</td>
+                            <td class="text-end">R$ {{ orcamento.valor_total|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Frete:</td>
+                            <td class="text-end">R$ {{ orcamento.valor_frete|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="table-success">
+                            <td><strong>Total Geral:</strong></td>
+                            <td class="text-end"><strong>R$ {{ orcamento.get_valor_final|floatformat:2 }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Timeline de Status -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Histórico</h5>
+    </div>
+    <div class="card-body">
+        <div class="timeline">
+            <div class="timeline-item active">
+                <h6>Orçamento Solicitado</h6>
+                <p class="text-muted">{{ orcamento.data_criacao|date:"d/m/Y H:i" }}</p>
+            </div>
+            
+            {% if orcamento.status != 'aguardando_resposta' %}
+            <div class="timeline-item active">
+                <h6>Resposta da Empresa Enviada</h6>
+                <p class="text-muted">Orçamento respondido pela empresa</p>
+            </div>
+            {% endif %}
+            
+            {% if orcamento.status == 'em_producao' %}
+            <div class="timeline-item active">
+                <h6>Orçamento Aprovado</h6>
+                <p class="text-muted">Cliente aprovou o orçamento</p>
+            </div>
+            <div class="timeline-item active">
+                <h6>Em Produção</h6>
+                <p class="text-muted">Produto em processo de produção</p>
+            </div>
+            {% elif orcamento.status == 'rejeitado' %}
+            <div class="timeline-item">
+                <h6>Orçamento Rejeitado</h6>
+                <p class="text-muted">Cliente rejeitou o orçamento</p>
+            </div>
+            {% elif orcamento.status == 'finalizado' %}
+            <div class="timeline-item active">
+                <h6>Finalizado</h6>
+                <p class="text-muted">Processo concluído</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Botões de Ação -->
+<div class="d-flex justify-content-between">
+    <a href="{% url 'naya_site:dashboard' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+    </a>
+    
+    {% if orcamento.status == 'aguardando_cliente' %}
+        <a href="{% url 'naya_site:responder_orcamento' orcamento.id %}" class="btn btn-success">
+            <i class="bi bi-reply"></i> Responder Orçamento
+        </a>
+    {% endif %}
+</div>
+{% endblock %}

@@ -5,8 +5,10 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 
+from django.forms import inlineformset_factory
+
 from naya_site import models
-from .models import UserProfile, State
+from .models import UserProfile, State, Orcamento, ItemOrcamento, ArquivoOrcamento, Product
 import re
 
 
@@ -33,12 +35,12 @@ class RegisterForm(UserCreationForm):
         max_length=14,
         required=True,
         help_text='Formato: 000.000.000-00',
-        validators=[
-            RegexValidator(
-                regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
-                message='CPF deve estar no formato: 000.000.000-00'
-            )
-        ]
+        # validators=[
+        #     RegexValidator(
+        #         regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
+        #         message='CPF deve estar no formato: 000.000.000-00'
+        #     )
+        # ]
     )
 
     cep = forms.CharField(max_length=9, validators=[
@@ -125,12 +127,12 @@ class RegisterUpdateForm(forms.ModelForm):
         max_length=14,
         required=True,
         help_text='Formato: 000.000.000-00',
-        validators=[
-            RegexValidator(
-                regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
-                message='CPF deve estar no formato: 000.000.000-00'
-            )
-        ]
+        # validators=[
+        #     RegexValidator(
+        #         regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
+        #         message='CPF deve estar no formato: 000.000.000-00'
+        #     )
+        # ]
     )
 
     cep = forms.CharField(max_length=9, validators=[
@@ -272,3 +274,82 @@ class RegisterUpdateForm(forms.ModelForm):
                 )
 
         return password1
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = [single_file_clean(data, initial)]
+        return result
+
+
+class OrcamentoForm(forms.ModelForm):
+    class Meta:
+        model = Orcamento
+        fields = ['data_maxima_entrega', 'observacoes_cliente']
+        widgets = {
+            'data_maxima_entrega': forms.DateInput(
+                attrs={'type': 'date', 'class': 'form-control'}
+            ),
+            'observacoes_cliente': forms.Textarea(
+                attrs={'rows': 3, 'class': 'form-control',
+                       'placeholder': 'Observações gerais sobre o orçamento...'}
+            ),
+        }
+
+
+class ItemOrcamentoForm(forms.ModelForm):
+    arquivos = MultipleFileField(
+        required=False, help_text="Selecione múltiplos arquivos")
+
+    class Meta:
+        model = ItemOrcamento
+        fields = ['produto', 'quantidade', 'descricao_personalizacao']
+        widgets = {
+            'produto': forms.Select(attrs={'class': 'form-control produto-select'}),
+            'quantidade': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'value': '1'}),
+            'descricao_personalizacao': forms.Textarea(
+                attrs={'rows': 3, 'class': 'form-control',
+                       'placeholder': 'Descreva como gostaria que fosse feita a personalização...'}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['produto'].queryset = Product.objects.filter(ativo=True)
+
+
+class RespostaOrcamentoForm(forms.ModelForm):
+    class Meta:
+        model = Orcamento
+        fields = ['valor_frete', 'data_prevista_entrega',
+                  'observacoes_empresa', 'nao_possivel_prazo']
+        widgets = {
+            'valor_frete': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'data_prevista_entrega': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'observacoes_empresa': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'nao_possivel_prazo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class ItemRespostaForm(forms.ModelForm):
+    arquivos_empresa = MultipleFileField(
+        required=False, help_text="Imagens desenvolvidas pela empresa")
+
+    class Meta:
+        model = ItemOrcamento
+        fields = ['preco_unitario']
+        widgets = {
+            'preco_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }

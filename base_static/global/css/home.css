@@ -1,9 +1,9 @@
 .content {
-  max-width: var(--main-page-width);
-  padding: var(--spacing);
+  max-width: 90%;
   background: var(--clr-white);
   box-shadow: 2px 2px 5px var(--clr-dark-shadow-20);
   border-radius: var(--default-border-radius);
+  margin: 10px auto;
 }
 
 .home {

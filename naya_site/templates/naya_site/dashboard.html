@@ -1,0 +1,168 @@
+{% extends 'global/base.html' %} {% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-speedometer2"></i> Dashboard de Orçamentos
+        </h1>
+    </div>
+</div>
+
+<!-- Status Atual -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Status Atual</h5>
+            </div>
+            <div class="card-body">
+                {% if status_atual == 'sem_orcamento' %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <strong>Sem orçamentos no momento.</strong>
+                        <a href="{% url 'naya_site:criar_orcamento' %}" class="btn btn-primary btn-sm ms-2">
+                            Solicitar Orçamento
+                        </a>
+                    </div>
+                {% elif status_atual == 'aguardando_resposta' %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-clock"></i>
+                        <strong>Aguardando resposta da empresa.</strong>
+                        Orçamento #{{ ultimo_orcamento.id|truncatechars:8 }}
+                    </div>
+                {% elif status_atual == 'aguardando_cliente' %}
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-bell"></i>
+                        <strong>Você tem um orçamento para responder!</strong>
+                        <a href="{% url 'naya_site:responder_orcamento' ultimo_orcamento.id %}" class="btn btn-success btn-sm ms-2">
+                            Responder Orçamento
+                        </a>
+                    </div>
+                {% elif status_atual == 'em_producao' %}
+                    <div class="alert alert-primary mb-0">
+                        <i class="bi bi-gear"></i>
+                        <strong>Orçamento em produção.</strong>
+                        Entrega prevista: {{ ultimo_orcamento.data_prevista_entrega|date:"d/m/Y" }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100 text-center status-card">
+            <div class="card-body">
+                <i class="bi bi-plus-circle display-4 text-primary"></i>
+                <h5 class="mt-3">Novo Orçamento</h5>
+                <p class="text-muted">Solicite um novo orçamento personalizado</p>
+                <a href="{% url 'naya_site:criar_orcamento' %}" class="btn btn-primary">
+                    Criar Orçamento
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100 text-center status-card">
+            <div class="card-body">
+                <i class="bi bi-list-check display-4 text-success"></i>
+                <h5 class="mt-3">Meus Orçamentos</h5>
+                <p class="text-muted">Visualize todos os seus orçamentos</p>
+                <button class="btn btn-success" onclick="scrollToOrcamentos()">
+                    Ver Orçamentos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Orçamentos Recentes -->
+<div class="row" id="orcamentos-section">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list"></i> Orçamentos Recentes</h5>
+            </div>
+            <div class="card-body">
+                {% if orcamentos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Data</th>
+                                    <th>Entrega</th>
+                                    <th>Status</th>
+                                    <th>Valor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for orcamento in orcamentos %}
+                                <tr>
+                                    <td>
+                                        <code>{{ orcamento.id|truncatechars:8 }}</code>
+                                    </td>
+                                    <td>{{ orcamento.data_criacao|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ orcamento.data_maxima_entrega|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if orcamento.status == 'aguardando_resposta' %}
+                                            <span class="badge bg-warning">Aguardando Resposta</span>
+                                        {% elif orcamento.status == 'aguardando_cliente' %}
+                                            <span class="badge bg-info">Aguardando Você</span>
+                                        {% elif orcamento.status == 'em_producao' %}
+                                            <span class="badge bg-primary">Em Produção</span>
+                                        {% elif orcamento.status == 'rejeitado' %}
+                                            <span class="badge bg-danger">Rejeitado</span>
+                                        {% elif orcamento.status == 'finalizado' %}
+                                            <span class="badge bg-success">Finalizado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if orcamento.valor_total > 0 %}
+                                            R$ {{ orcamento.get_valor_final|floatformat:2 }}
+                                        {% else %}
+                                            <span class="text-muted">Pendente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'orcamentos:detalhe_orcamento' orcamento.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                        {% if orcamento.status == 'aguardando_cliente' %}
+                                            <a href="{% url 'orcamentos:responder_orcamento' orcamento.id %}" class="btn btn-sm btn-success">
+                                                <i class="bi bi-reply"></i> Responder
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <h5 class="mt-3 text-muted">Nenhum orçamento encontrado</h5>
+                        <p class="text-muted">Comece criando seu primeiro orçamento personalizado!</p>
+                        <a href="{% url 'naya_site:criar_orcamento' %}" class="btn btn-primary">
+                            <i class="bi bi-plus"></i> Criar Primeiro Orçamento
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function scrollToOrcamentos() {
+    document.getElementById('orcamentos-section').scrollIntoView({
+        behavior: 'smooth'
+    });
+}
+</script>
+{% endblock %}

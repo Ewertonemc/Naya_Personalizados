@@ -1,5 +1,6 @@
 from django.contrib import admin
 from naya_site import models
+from .models import Category, Product, Orcamento, ItemOrcamento, ArquivoOrcamento
 
 
 @admin.register(models.Product)
@@ -36,3 +37,24 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_per_page = 10
     list_max_show_all = 50
     list_display_links = ('user',)
+
+
+class ItemOrcamentoInline(admin.TabularInline):
+    model = ItemOrcamento
+    extra = 0
+
+
+@admin.register(Orcamento)
+class OrcamentoAdmin(admin.ModelAdmin):
+    list_display = ['id', 'cliente', 'data_criacao', 'status', 'valor_total']
+    list_filter = ['status', 'data_criacao']
+    search_fields = ['cliente__username',
+                     'cliente__first_name', 'cliente__last_name']
+    inlines = [ItemOrcamentoInline]
+    readonly_fields = ['id', 'data_criacao']
+
+
+@admin.register(ArquivoOrcamento)
+class ArquivoOrcamentoAdmin(admin.ModelAdmin):
+    list_display = ['nome_original', 'tipo', 'data_upload']
+    list_filter = ['tipo', 'data_upload']

@@ -1,0 +1,232 @@
+{% extends 'global/base.html' %} {% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-plus-circle"></i> Solicitar Novo Orçamento
+        </h1>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="orcamento-form">
+    {% csrf_token %}
+    
+    <!-- Informações Gerais -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações Gerais</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        {{ orcamento_form.data_maxima_entrega }}
+                        <label for="{{ orcamento_form.data_maxima_entrega.id_for_label }}">Data Máxima para Entrega</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-floating">
+                {{ orcamento_form.observacoes_cliente }}
+                <label for="{{ orcamento_form.observacoes_cliente.id_for_label }}">Observações Gerais</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Produtos -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-box"></i> Produtos</h5>
+            <button type="button" class="btn btn-success btn-sm" onclick="adicionarItem()">
+                <i class="bi bi-plus"></i> Adicionar Produto
+            </button>
+        </div>
+        <div class="card-body">
+            <div id="itens-container">
+                {{ item_formset.management_form }}
+                {% for form in item_formset %}
+                    <div class="item-orcamento" data-form-index="{{ forloop.counter0 }}">
+                        {% for field in form %}
+                            {% if field.name != 'DELETE' %}
+                                <div class="mb-3">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <div class="form-text">{{ field.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Preview do Produto -->
+                        <div class="produto-info" id="produto-info-{{ forloop.counter0 }}">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <img class="preview-imagem" id="produto-imagem-{{ forloop.counter0 }}" src="" alt="Produto">
+                                </div>
+                                <div class="col-md-9">
+                                    <h6 id="produto-nome-{{ forloop.counter0 }}"></h6>
+                                    <p class="text-muted mb-1">Categoria: <span id="produto-categoria-{{ forloop.counter0 }}"></span></p>
+                                    <p class="text-muted">Preço base: R$ <span id="produto-preco-{{ forloop.counter0 }}"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview dos Arquivos -->
+                        <div id="arquivos-preview-{{ forloop.counter0 }}" class="mt-3"></div>
+                        
+                        <div class="text-end mt-3">
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removerItem(this)">
+                                <i class="bi bi-trash"></i> Remover
+                            </button>
+                        </div>
+                        
+                        {{ form.DELETE }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="d-flex justify-content-between">
+        <a href="{% url 'naya_site:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-send"></i> Solicitar Orçamento
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let formIndex = {{ item_formset|length }};
+
+// Atualizar informações do produto quando selecionado
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('produto-select')) {
+        const produtoId = e.target.value;
+        const formIndex = e.target.closest('.item-orcamento').dataset.formIndex;
+        
+        if (produtoId) {
+            fetch(`/orcamentos/api/produto/${produtoId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const infoDiv = document.getElementById(`produto-info-${formIndex}`);
+                    const imagem = document.getElementById(`produto-imagem-${formIndex}`);
+                    const nome = document.getElementById(`produto-nome-${formIndex}`);
+                    const categoria = document.getElementById(`produto-categoria-${formIndex}`);
+                    const preco = document.getElementById(`produto-preco-${formIndex}`);
+                    
+                    imagem.src = data.imagem || '/static/img/no-image.png';
+                    nome.textContent = data.nome;
+                    categoria.textContent = data.categoria;
+                    preco.textContent = data.preco_base.toFixed(2);
+                    
+                    infoDiv.style.display = 'block';
+                })
+                .catch(error => console.error('Erro:', error));
+        }
+    }
+});
+
+// Preview de arquivos
+document.addEventListener('change', function(e) {
+    if (e.target.type === 'file' && e.target.multiple) {
+        const formIndex = e.target.closest('.item-orcamento').dataset.formIndex;
+        const previewDiv = document.getElementById(`arquivos-preview-${formIndex}`);
+        
+        previewDiv.innerHTML = '';
+        
+        Array.from(e.target.files).forEach(file => {
+            const div = document.createElement('div');
+            div.className = 'arquivo-preview';
+            div.innerHTML = `<i class="bi bi-file-earmark"></i> ${file.name}`;
+            previewDiv.appendChild(div);
+        });
+    }
+});
+
+function adicionarItem() {
+    const container = document.getElementById('itens-container');
+    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+    
+    // Clone do primeiro item como template
+    const template = container.children[1].cloneNode(true);
+    
+    // Atualizar índices
+    const newIndex = formIndex++;
+    template.dataset.formIndex = newIndex;
+    
+    // Limpar valores
+    template.querySelectorAll('input, select, textarea').forEach(field => {
+        if (field.type !== 'hidden') {
+            field.value = '';
+        }
+        // Atualizar name e id
+        if (field.name) {
+            field.name = field.name.replace(/form-\d+/, `form-${newIndex}`);
+            field.id = field.id.replace(/id_form-\d+/, `id_form-${newIndex}`);
+        }
+    });
+    
+    // Ocultar produto-info
+    const produtoInfo = template.querySelector('.produto-info');
+    produtoInfo.style.display = 'none';
+    produtoInfo.id = `produto-info-${newIndex}`;
+    
+    // Atualizar IDs dos elementos
+    template.querySelector('.preview-imagem').id = `produto-imagem-${newIndex}`;
+    template.querySelector('[id^="produto-nome-"]').id = `produto-nome-${newIndex}`;
+    template.querySelector('[id^="produto-categoria-"]').id = `produto-categoria-${newIndex}`;
+    template.querySelector('[id^="produto-preco-"]').id = `produto-preco-${newIndex}`;
+    template.querySelector('[id^="arquivos-preview-"]').id = `arquivos-preview-${newIndex}`;
+    
+    container.appendChild(template);
+    
+    // Atualizar total de forms
+    totalForms.value = parseInt(totalForms.value) + 1;
+}
+
+function removerItem(button) {
+    const item = button.closest('.item-orcamento');
+    const deleteInput = item.querySelector('input[name$="-DELETE"]');
+    
+    if (deleteInput) {
+        deleteInput.checked = true;
+        item.style.display = 'none';
+    } else {
+        item.remove();
+        // Atualizar total de forms
+        const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+        totalForms.value = parseInt(totalForms.value) - 1;
+    }
+}
+
+// Validação do formulário
+document.getElementById('orcamento-form').addEventListener('submit', function(e) {
+    const itensVisiveis = document.querySelectorAll('.item-orcamento:not([style*="display: none"])');
+    
+    if (itensVisiveis.length === 0) {
+        e.preventDefault();
+        alert('Adicione pelo menos um produto ao orçamento.');
+        return false;
+    }
+    
+    // Validar se todos os produtos foram selecionados
+    let produtosSelecionados = true;
+    itensVisiveis.forEach(item => {
+        const select = item.querySelector('.produto-select');
+        if (!select.value) {
+            produtosSelecionados = false;
+        }
+    });
+    
+    if (!produtosSelecionados) {
+        e.preventDefault();
+        alert('Selecione um produto para todos os itens.');
+        return false;
+    }
+});
+</script>
+{% endblock %}
