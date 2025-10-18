@@ -1,11 +1,12 @@
+# flake8: noqa: E501
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.forms import formset_factory
 from django.db import transaction
-from naya_site.models import Orcamento, ItemOrcamento, ArquivoOrcamento, Product, StatusOrcamento
-from naya_site.forms import OrcamentoForm, ItemOrcamentoForm, RespostaOrcamentoForm, ItemRespostaForm
+from naya_site.models import Orcamento, ArquivoOrcamento, Product, StatusOrcamento
+from naya_site.forms import OrcamentoForm, ItemOrcamentoForm, RespostaOrcamentoForm
 
 
 @login_required
@@ -32,40 +33,77 @@ def criar_orcamento(request):
 
     if request.method == 'POST':
         orcamento_form = OrcamentoForm(request.POST)
-        item_formset = ItemFormSet(request.POST, request.FILES)
+        item_formset = ItemFormSet(request.POST, request.FILES, prefix='itens')
 
         if orcamento_form.is_valid() and item_formset.is_valid():
-            with transaction.atomic():
-                orcamento = orcamento_form.save(commit=False)
-                orcamento.cliente = request.user
-                orcamento.save()
+            try:
+                with transaction.atomic():
+                    # Salvar orçamento
+                    orcamento = orcamento_form.save(commit=False)
+                    orcamento.cliente = request.user
+                    orcamento.save()
 
-                for item_form in item_formset:
-                    if item_form.cleaned_data and not item_form.cleaned_data.get('DELETE', False):
-                        item = item_form.save(commit=False)
-                        item.orcamento = orcamento
-                        item.save()
+                    # Salvar itens
+                    itens_salvos = 0
+                    for form in item_formset:
+                        if form.cleaned_data and not form.cleaned_data.get(
+                            'DELETE', False
+                        ):
+                            item = form.save(commit=False)
+                            item.orcamento = orcamento
 
-                        # Salvar arquivos
-                        arquivos = item_form.cleaned_data.get('arquivos', [])
-                        for arquivo in arquivos:
-                            ArquivoOrcamento.objects.create(
-                                item_orcamento=item,
-                                arquivo=arquivo,
-                                tipo='cliente',
-                                nome_original=arquivo.name
-                            )
+                            if not item.produto:
+                                messages.error(
+                                    request,
+                                    'Selecione um produto válido.'
+                                )
+                                return redirect('naya_site:criar_orcamento')
 
-                messages.success(request, 'Orçamento solicitado com sucesso!')
-                return redirect('dashboard_orcamentos')
+                            item.save()
+                            itens_salvos += 1
+
+                            arquivos = form.cleaned_data.get('arquivos', [])
+                            for arquivo in arquivos:
+                                if arquivo is not None and hasattr(
+                                    arquivo, 'name'
+                                ):
+                                    ArquivoOrcamento.objects.create(
+                                        item_orcamento=item,
+                                        arquivo=arquivo,
+                                        tipo='cliente',
+                                        nome_original=arquivo.name
+                                    )
+                                else:
+                                    print(
+                                        f"⚠️ Arquivo None ignorado no item {
+                                            itens_salvos
+                                        }"
+                                    )
+
+                    if itens_salvos == 0:
+                        messages.error(
+                            request, 'Adicione pelo menos um produto.')
+                        orcamento.delete()
+                        return redirect('naya_site:criar_orcamento')
+
+                    messages.success(
+                        request, 'Orçamento solicitado com sucesso!')
+                    return redirect('naya_site:dashboard')
+
+            except Exception as e:
+                messages.error(request, f'Erro ao criar orçamento: {str(e)}')
+                print(f"Erro ao criar orçamento: {e}")
+
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+
     else:
         orcamento_form = OrcamentoForm()
-        item_formset = ItemFormSet()
+        item_formset = ItemFormSet(prefix='itens')
 
     context = {
         'orcamento_form': orcamento_form,
         'item_formset': item_formset,
-        # 'product': Product.objects.filter(ativo=True),
     }
     return render(request, 'naya_site/criar_orcamento.html', context)
 
@@ -115,7 +153,7 @@ def responder_orcamento(request, orcamento_id):
             orcamento.save()
             messages.info(request, 'Solicitação de alteração enviada.')
 
-        return redirect('detalhe_orcamento', orcamento_id=orcamento_id)
+        return redirect('dashboard')
 
     context = {
         'orcamento': orcamento,
@@ -126,16 +164,27 @@ def responder_orcamento(request, orcamento_id):
 def get_produto_info(request, produto_id):
     """API para obter informações do produto"""
     try:
-        produto = Product.objects.get(id=produto_id, ativo=True)
+        produto = Product.objects.get(id=produto_id)
+
+        # Construir URL absoluta da imagem
+        if produto.image:
+            imagem_url = request.build_absolute_uri(produto.image.url)
+        else:
+            imagem_url = request.build_absolute_uri('/static/img/no-image.png')
+
         data = {
             'nome': produto.name,
-            'categoria': produto.category.name,
-            'imagem': produto.image.url if produto.image else '',
-            'preco_base': float(produto.price),
+            'categoria': produto.category.name if produto.category else 'Sem categoria',
+            'imagem': imagem_url,  # URL ABSOLUTA
+            'preco_base': float(produto.unit_value),
         }
         return JsonResponse(data)
+
     except Product.DoesNotExist:
         return JsonResponse({'error': 'Produto não encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 # Views para administração (empresa)
 
@@ -189,7 +238,7 @@ def admin_responder_orcamento(request, orcamento_id):
 
         # Processar itens
         valor_total = 0
-        for item in orcamento.itens.all():
+        for item in orcamento.itens.all():  # type: ignore
             preco_unitario = request.POST.get(f'item_{item.id}_preco', 0)
             item.preco_unitario = float(
                 preco_unitario) if preco_unitario else 0

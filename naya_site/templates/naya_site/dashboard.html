@@ -127,11 +127,11 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'orcamentos:detalhe_orcamento' orcamento.id %}" class="btn btn-sm btn-outline-primary">
+                                        <a href="{% url 'naya_site:detalhe_orcamento' orcamento.id %}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> Ver
                                         </a>
                                         {% if orcamento.status == 'aguardando_cliente' %}
-                                            <a href="{% url 'orcamentos:responder_orcamento' orcamento.id %}" class="btn btn-sm btn-success">
+                                            <a href="{% url 'naya_site:responder_orcamento' orcamento.id %}" class="btn btn-sm btn-success">
                                                 <i class="bi bi-reply"></i> Responder
                                             </a>
                                         {% endif %}

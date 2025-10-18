@@ -4,11 +4,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-
-from django.forms import inlineformset_factory
-
 from naya_site import models
-from .models import UserProfile, State, Orcamento, ItemOrcamento, ArquivoOrcamento, Product
+from .models import UserProfile, State, Orcamento, ItemOrcamento, Product
 import re
 
 
@@ -26,7 +23,7 @@ class ProductForm(forms.ModelForm):
         model = models.Product
         fields = (
             'name', 'quantity', 'minimum_quantity',
-            'unit_value', 'category', 'image',
+            'unit_value', 'category', 'price', 'image',
         )
 
 
@@ -286,12 +283,31 @@ class MultipleFileField(forms.FileField):
         super().__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
+        # FILTRAR VALORES NONE
+        if data is None:
+            return []
+
+        if isinstance(data, (list, tuple)):
+            # Remove valores None da lista
+            data = [d for d in data if d is not None]
+            if not data:  # Se a lista ficou vazia
+                return []
+
         single_file_clean = super().clean
         if isinstance(data, (list, tuple)):
-            result = [single_file_clean(d, initial) for d in data]
+            result = []
+            for d in data:
+                if d is not None:  # Só processa se não for None
+                    try:
+                        result.append(single_file_clean(d, initial))
+                    except forms.ValidationError:
+                        # Ignora arquivos inválidos em vez de quebrar todo o form
+                        continue
+            return result
         else:
-            result = [single_file_clean(data, initial)]
-        return result
+            if data is not None:
+                return [single_file_clean(data, initial)]
+            return []
 
 
 class OrcamentoForm(forms.ModelForm):
@@ -300,34 +316,66 @@ class OrcamentoForm(forms.ModelForm):
         fields = ['data_maxima_entrega', 'observacoes_cliente']
         widgets = {
             'data_maxima_entrega': forms.DateInput(
-                attrs={'type': 'date', 'class': 'form-control'}
+                attrs={
+                    'type': 'date',
+                    'class': 'form-control'
+                }
             ),
             'observacoes_cliente': forms.Textarea(
-                attrs={'rows': 3, 'class': 'form-control',
-                       'placeholder': 'Observações gerais sobre o orçamento...'}
+                attrs={
+                    'rows': 3,
+                    'class':
+                    'form-control',
+                    'placeholder': 'Observações gerais sobre o orçamento...'
+                }
             ),
         }
 
 
 class ItemOrcamentoForm(forms.ModelForm):
     arquivos = MultipleFileField(
-        required=False, help_text="Selecione múltiplos arquivos")
+        required=False,
+        help_text="Selecione múltiplos arquivos"
+    )
 
     class Meta:
         model = ItemOrcamento
         fields = ['produto', 'quantidade', 'descricao_personalizacao']
         widgets = {
-            'produto': forms.Select(attrs={'class': 'form-control produto-select'}),
-            'quantidade': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'value': '1'}),
+            'produto': forms.Select(attrs={
+                'class': 'form-control produto-select',
+                'required': 'true',
+            }),
+            'quantidade': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'value': '1',
+                'required': 'true',
+            }),
             'descricao_personalizacao': forms.Textarea(
-                attrs={'rows': 3, 'class': 'form-control',
-                       'placeholder': 'Descreva como gostaria que fosse feita a personalização...'}
+                attrs={'rows': 3,
+                       'class': 'form-control',
+                       'placeholder': 'Descreva a personalização...'
+                       }
             ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['produto'].queryset = Product.objects.filter(ativo=True)
+        self.fields['produto'].queryset = Product.objects.all()
+        self.fields['produto'].empty_label = "Selecione um produto"
+
+    def clean_produto(self):
+        produto = self.cleaned_data.get('produto')
+        if not produto:
+            raise forms.ValidationError('Este campo é obrigatório.')
+        return produto
+
+    def clean_quantidade(self):
+        quantidade = self.cleaned_data.get('quantidade')
+        if quantidade and quantidade < 1:
+            raise forms.ValidationError('A quantidade deve ser pelo menos 1.')
+        return quantidade
 
 
 class RespostaOrcamentoForm(forms.ModelForm):

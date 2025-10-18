@@ -12,14 +12,14 @@
             {% endif %}
         </div>
 
-        <div class="container-product">
-            
+        <div class="container-product">            
             <p><b>ID: </b> {{ product.id }}</p>
             <p><b>Name: </b> {{ product.name }}</p>
             <p><b>Quantidade: </b> {{ product.quantity }}</p>
             <p><b>Quantidade minima: </b> {{ product.minimum_quantity }}</p>
             <p><b>Valor unitário: </b> R$ {{ product.unit_value }}</p>
             <p><b>Categoria: </b> {{ product.category.name }}</p>
+            <p><b>Preço: </b> {{ product.price }}</p>
         </div>
     </div>
     

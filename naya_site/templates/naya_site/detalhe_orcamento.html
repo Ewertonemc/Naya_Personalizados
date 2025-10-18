@@ -87,58 +87,91 @@
     </div>
     <div class="card-body">
         {% for item in orcamento.itens.all %}
-            <div class="item-detalhes">
+            <div class="item-detalhes border-bottom pb-4 mb-4 {% if not forloop.last %}border-bottom{% endif %}">
                 <div class="row">
                     <div class="col-md-3">
-                        {% if item.produto.imagem %}
-                            <img src="{{ item.produto.imagem.url }}" class="img-fluid rounded" alt="{{ item.produto.nome }}">
+                        {% if item.produto.image %}
+                            <img src="{{ item.produto.image.url }}" 
+                                class="img-fluid rounded border" 
+                                alt="{{ item.produto.name }}"
+                                style="max-height: 150px; object-fit: cover;">
                         {% else %}
-                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
-                                <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                            <div class="bg-light rounded border d-flex align-items-center justify-content-center" style="height: 150px;">
+                                <div class="text-center text-muted">
+                                    <i class="bi bi-image display-6"></i>
+                                    <p class="small mt-2 mb-0">Sem imagem</p>
+                                </div>
                             </div>
                         {% endif %}
                     </div>
                     <div class="col-md-9">
-                        <h6>{{ item.produto.nome }}</h6>
-                        <p class="text-muted mb-2">Categoria: {{ item.produto.categoria.nome }}</p>
+                        <h6 class="text-primary">
+                            {% if item.produto %}
+                                {{ item.produto.name }}
+                            {% else %}
+                                Produto não encontrado
+                            {% endif %}
+                        </h6>
+                        
+                        <p class="text-muted mb-2">
+                            Categoria: 
+                            {% if item.produto and item.produto.category %}
+                                {{ item.produto.category.name }}
+                            {% else %}
+                                Sem categoria
+                            {% endif %}
+                        </p>
                         
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <p><strong>Quantidade:</strong> {{ item.quantidade }}</p>
-                                {% if item.preco_unitario > 0 %}
+                                <p><strong>Quantidade:</strong> {{ item.quantidade|default:1 }}</p>
+                                {% if item.preco_unitario and item.preco_unitario > 0 %}
                                 <p><strong>Preço Unitário:</strong> R$ {{ item.preco_unitario|floatformat:2 }}</p>
                                 <p><strong>Total do Item:</strong> R$ {{ item.preco_total|floatformat:2 }}</p>
+                                {% else %}
+                                <p class="text-muted"><em>Preço não definido</em></p>
                                 {% endif %}
                             </div>
                         </div>
                         
+                        {% if item.descricao_personalizacao %}
                         <div class="mb-3">
                             <strong>Personalização Solicitada:</strong>
                             <div class="bg-light p-3 rounded mt-2">{{ item.descricao_personalizacao|linebreaks }}</div>
                         </div>
+                        {% endif %}
                         
                         <!-- Arquivos -->
                         {% if item.arquivos.all %}
                             <div class="mb-3">
-                                <strong>Arquivos:</strong>
+                                <strong>Arquivos Anexados:</strong>
                                 <div class="mt-2">
                                     {% for arquivo in item.arquivos.all %}
-                                        <a href="{{ arquivo.arquivo.url }}" target="_blank" 
-                                           class="arquivo-link {% if arquivo.tipo == 'empresa' %}arquivo-empresa{% endif %}">
-                                            <i class="bi bi-file-earmark"></i> 
-                                            {{ arquivo.nome_original }}
-                                            {% if arquivo.tipo == 'empresa' %}
-                                                <small>(Empresa)</small>
-                                            {% else %}
-                                                <small>(Cliente)</small>
-                                            {% endif %}
-                                        </a>
+                                        <div class="mb-2">
+                                            <a href="{{ arquivo.arquivo.url }}" target="_blank" 
+                                               class="arquivo-link d-inline-flex align-items-center {% if arquivo.tipo == 'empresa' %}text-success{% else %}text-primary{% endif %}">
+                                                <i class="bi {% if arquivo.tipo == 'empresa' %}bi-file-earmark-check{% else %}bi-file-earmark{% endif %} me-2"></i> 
+                                                {{ arquivo.nome_original }}
+                                                <small class="ms-2 badge {% if arquivo.tipo == 'empresa' %}bg-success{% else %}bg-primary{% endif %}">
+                                                    {% if arquivo.tipo == 'empresa' %}
+                                                        Empresa
+                                                    {% else %}
+                                                        Cliente
+                                                    {% endif %}
+                                                </small>
+                                            </a>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             </div>
                         {% endif %}
                     </div>
                 </div>
+            </div>
+        {% empty %}
+            <div class="text-center py-4">
+                <i class="bi bi-inbox display-4 text-muted"></i>
+                <p class="mt-3 text-muted">Nenhum item encontrado neste orçamento.</p>
             </div>
         {% endfor %}
     </div>
@@ -220,9 +253,15 @@
 
 <!-- Botões de Ação -->
 <div class="d-flex justify-content-between">
-    <a href="{% url 'naya_site:dashboard' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+    {% if request.user.is_staff %}
+    <a href="{% url 'naya_site:admin_dashboard' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-speedometer2"></i> Voltar ao Painel Admin
     </a>
+    {% else %}
+        <a href="{% url 'naya_site:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-house"></i> Voltar ao Dashboard
+        </a>
+    {% endif %}
     
     {% if orcamento.status == 'aguardando_cliente' %}
         <a href="{% url 'naya_site:responder_orcamento' orcamento.id %}" class="btn btn-success">

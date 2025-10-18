@@ -389,7 +389,8 @@ h2 {
 }
 .timeline-item {
     position: relative;
-    padding-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    padding-left: 1rem;
 }
 .timeline-item::before {
     content: '';

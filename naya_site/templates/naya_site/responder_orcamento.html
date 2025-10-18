@@ -111,20 +111,22 @@
                                 {% endif %}
                                 
                                 <!-- Arquivos da Empresa -->
-                                {% if item.arquivos.filter|tipo:'empresa' %}
-                                    <div class="mb-3">
-                                        <strong>Proposta Visual da Empresa:</strong>
-                                        <div class="mt-2">
-                                            {% for arquivo in item.arquivos.all %}
-                                                {% if arquivo.tipo == 'empresa' %}
+                                {% for arquivo in item.arquivos.all %}
+                                    {% if arquivo.tipo == 'empresa' %}
+                                        {% if forloop.first %}
+                                            <div class="mb-3">
+                                                <strong>Proposta Visual da Empresa:</strong>
+                                                <div class="mt-2">
+                                        {% endif %}
                                                     <a href="{{ arquivo.arquivo.url }}" target="_blank" class="arquivo-link arquivo-empresa">
                                                         <i class="bi bi-file-earmark-image"></i> {{ arquivo.nome_original }}
                                                     </a>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endif %}
+                                        {% if forloop.last %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
                             </div>
                             <div class="col-md-4">
                                 <div class="card border-primary">
@@ -297,7 +299,7 @@
 
 <!-- Botão Voltar -->
 <div class="text-center mt-4">
-    <a href="{% url 'orcamentos:detalhe_orcamento' orcamento.id %}" class="btn btn-outline-secondary">
+    <a href="{% url 'naya_site:detalhe_orcamento' orcamento.id %}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Voltar aos Detalhes
     </a>
 </div>
