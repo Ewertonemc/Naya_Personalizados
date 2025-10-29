@@ -28,6 +28,8 @@ urlpatterns = [
          views.detalhe_orcamento, name='detalhe_orcamento'),
     path('orcamento/responder/<uuid:orcamento_id>/',
          views.responder_orcamento, name='responder_orcamento'),
+    path('naya/iniciar-producao/<uuid:orcamento_id>/',
+         views.iniciar_producao, name='iniciar_producao'),
 
     # API
     path('api/product/<int:produto_id>/',
@@ -37,4 +39,11 @@ urlpatterns = [
     path('naya/', views.admin_dashboard, name='admin_dashboard'),
     path('naya/responder/<uuid:orcamento_id>/',
          views.admin_responder_orcamento, name='admin_responder'),
+
+
+    path('naya/ordem-servico/<uuid:orcamento_id>/',
+         views.criar_ordem_servico, name='criar_ordem_servico'),
+
+    path('naya/os-pdf/<uuid:orcamento_id>/',
+         views.download_pdf_os, name='download_pdf_os'),
 ]

@@ -1,4 +1,5 @@
 # flake8: noqa: E501
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,6 +8,9 @@ from django.forms import formset_factory
 from django.db import transaction
 from naya_site.models import Orcamento, ArquivoOrcamento, Product, StatusOrcamento
 from naya_site.forms import OrcamentoForm, ItemOrcamentoForm, RespostaOrcamentoForm
+from django.contrib.auth.models import User
+from django.db.models import Count, Prefetch
+from naya_site.utils import gerar_pdf_os
 
 
 @login_required
@@ -135,10 +139,13 @@ def responder_orcamento(request, orcamento_id):
         acao = request.POST.get('acao')
 
         if acao == 'aprovar':
-            orcamento.status = StatusOrcamento.EM_PRODUCAO
+            # Muda para APROVADO (não diretamente para EM_PRODUCAO)
+            orcamento.status = StatusOrcamento.APROVADO
             orcamento.save()
             messages.success(
-                request, 'Orçamento aprovado! Seu pedido entrou em produção.')
+                request,
+                'Orçamento aprovado! Aguarde a confirmação da produção.'
+            )
 
         elif acao == 'rejeitar':
             orcamento.status = StatusOrcamento.REJEITADO
@@ -146,19 +153,47 @@ def responder_orcamento(request, orcamento_id):
             messages.info(request, 'Orçamento rejeitado.')
 
         elif acao == 'alterar':
-            # Lógica para solicitar alterações
             observacoes = request.POST.get('observacoes_alteracao')
             orcamento.observacoes_cliente = observacoes
             orcamento.status = StatusOrcamento.AGUARDANDO_RESPOSTA
             orcamento.save()
             messages.info(request, 'Solicitação de alteração enviada.')
 
-        return redirect('dashboard')
+        return redirect(
+            'naya_site:detalhe_orcamento',
+            orcamento_id=orcamento_id
+        )
 
     context = {
         'orcamento': orcamento,
     }
     return render(request, 'naya_site/responder_orcamento.html', context)
+
+
+@login_required
+def iniciar_producao(request, orcamento_id):
+    """Staff muda orçamento para 'Em Produção'"""
+    if not request.user.is_staff:
+        messages.error(request, 'Acesso negado.')
+        return redirect('naya_site:dashboard_orcamentos')
+
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+
+    if orcamento.status != StatusOrcamento.APROVADO:
+        messages.error(
+            request, 'Apenas orçamentos aprovados podem entrar em produção.')
+        return redirect('naya_site:admin_dashboard')
+
+    if request.method == 'POST':
+        orcamento.status = StatusOrcamento.EM_PRODUCAO
+        orcamento.save()
+        messages.success(request, 'Orçamento movido para produção!')
+        return redirect('naya_site:admin_dashboard')
+
+    context = {
+        'orcamento': orcamento,
+    }
+    return render(request, 'naya_site/confirmar_producao.html', context)
 
 
 def get_produto_info(request, produto_id):
@@ -194,15 +229,21 @@ def admin_dashboard(request):
     """Dashboard administrativo"""
     if not request.user.is_staff:
         messages.error(request, 'Acesso negado.')
-        return redirect('dashboard_orcamentos')
+        return redirect('naya_site:dashboard')
 
-    # Contadores para cards
+    # Clientes
+    clientes = User.objects.filter(is_staff=False, is_superuser=False)
+
     aguardando_resposta = Orcamento.objects.filter(
         status=StatusOrcamento.AGUARDANDO_RESPOSTA).count()
     aguardando_cliente = Orcamento.objects.filter(
         status=StatusOrcamento.AGUARDANDO_CLIENTE).count()
     aprovados = Orcamento.objects.filter(
         status=StatusOrcamento.APROVADO).count()
+    em_producao = Orcamento.objects.filter(
+        status=StatusOrcamento.EM_PRODUCAO).count()
+    finalizados = Orcamento.objects.filter(
+        status=StatusOrcamento.FINALIZADO).count()
 
     # Orçamentos por status
     orcamentos_aguardando = Orcamento.objects.filter(
@@ -211,14 +252,33 @@ def admin_dashboard(request):
         status=StatusOrcamento.AGUARDANDO_CLIENTE)
     orcamentos_aprovados = Orcamento.objects.filter(
         status=StatusOrcamento.APROVADO)
+    orcamentos_producao = Orcamento.objects.filter(
+        status=StatusOrcamento.EM_PRODUCAO)
+    orcamentos_finalizados = Orcamento.objects.filter(
+        status=StatusOrcamento.FINALIZADO)
+
+    # Estatísticas
+    clientes_com_orcamento = clientes.filter(
+        orcamento__isnull=False).distinct().count()
+    total_orcamentos = Orcamento.objects.count()
+    media_orcamentos = total_orcamentos / \
+        clientes.count() if clientes.count() > 0 else 0
 
     context = {
-        'aguardando_resposta': aguardando_resposta,
-        'aguardando_cliente': aguardando_cliente,
-        'aprovados': aprovados,
-        'orcamentos_aguardando': orcamentos_aguardando,
-        'orcamentos_cliente': orcamentos_cliente,
-        'orcamentos_aprovados': orcamentos_aprovados,
+        'aguardando_resposta': Orcamento.objects.filter(status=StatusOrcamento.AGUARDANDO_RESPOSTA).count(),
+        'aguardando_cliente': Orcamento.objects.filter(status=StatusOrcamento.AGUARDANDO_CLIENTE).count(),
+        'aprovados': Orcamento.objects.filter(status=StatusOrcamento.APROVADO).count(),
+        'em_producao': em_producao,
+        'finalizados': finalizados,
+        'orcamentos_aguardando': Orcamento.objects.filter(status=StatusOrcamento.AGUARDANDO_RESPOSTA),
+        'orcamentos_cliente': Orcamento.objects.filter(status=StatusOrcamento.AGUARDANDO_CLIENTE),
+        'orcamentos_aprovados': Orcamento.objects.filter(status=StatusOrcamento.APROVADO),
+        'orcamentos_producao': orcamentos_producao,
+        'orcamentos_finalizados': orcamentos_finalizados,
+        'clientes': clientes,
+        'clientes_com_orcamento': clientes_com_orcamento,
+        'total_orcamentos': total_orcamentos,
+        'media_orcamentos': media_orcamentos,
     }
     return render(request, 'naya_site/admin_dashboard.html', context)
 
@@ -228,7 +288,7 @@ def admin_responder_orcamento(request, orcamento_id):
     """Administrador responde ao orçamento"""
     if not request.user.is_staff:
         messages.error(request, 'Acesso negado.')
-        return redirect('dashboard_orcamentos')
+        return redirect('naya_site:dashboard_orcamentos')
 
     orcamento = get_object_or_404(Orcamento, id=orcamento_id)
 
@@ -263,7 +323,7 @@ def admin_responder_orcamento(request, orcamento_id):
             orcamento.save()
 
             messages.success(request, 'Resposta enviada ao cliente!')
-            return redirect('admin_dashboard')
+            return redirect('naya_site:admin_dashboard')
     else:
         orcamento_form = RespostaOrcamentoForm(instance=orcamento)
 
@@ -272,3 +332,68 @@ def admin_responder_orcamento(request, orcamento_id):
         'orcamento_form': orcamento_form,
     }
     return render(request, 'naya_site/admin_responder.html', context)
+
+
+@login_required
+def criar_ordem_servico(request, orcamento_id):
+    """Criar e visualizar ordem de serviço"""
+    if not request.user.is_staff:
+        messages.error(request, 'Acesso negado.')
+        return redirect('naya_site:dashboard')
+
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+    if orcamento.status != StatusOrcamento.APROVADO and not orcamento.ordem_servico_criada:
+        messages.error(
+            request, 'Apenas orçamentos aprovados podem gerar ordem de serviço.')
+        return redirect('naya_site:admin_dashboard')
+
+    if request.method == 'POST':
+        # Criar ordem de serviço
+        if not orcamento.ordem_servico_criada:
+            orcamento.criar_ordem_servico()
+            print(f"OS Criada - Número: {orcamento.numero_os}")  # DEBUG
+            messages.success(
+                request, f'Ordem de serviço {orcamento.numero_os} criada com sucesso!')
+
+        # Concluir produção
+        acao = request.POST.get('acao')
+        if acao == 'concluir':
+            observacoes = request.POST.get('observacoes_producao', '')
+            orcamento.observacoes_producao = observacoes
+            orcamento.concluir_producao()
+            messages.success(
+                request, f'Produção da OS {orcamento.numero_os} concluída!')
+            return redirect('naya_site:admin_dashboard')
+
+    context = {
+        'orcamento': orcamento,
+    }
+    return render(request, 'naya_site/ordem_servico.html', context)
+
+
+@login_required
+def download_pdf_os(request, orcamento_id):
+    """View para download do PDF da OS"""
+    if not request.user.is_staff:
+        messages.error(request, 'Acesso negado.')
+        return redirect('naya_site:dashboard')
+
+    orcamento = get_object_or_404(Orcamento, id=orcamento_id)
+
+    if not orcamento.ordem_servico_criada:
+        messages.error(request, 'Ordem de serviço não criada.')
+        return redirect('naya_site:admin_dashboard')
+
+    try:
+        # Gerar PDF
+        buffer = gerar_pdf_os(orcamento)
+
+        # Configurar resposta
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="OS_{orcamento.numero_os}.pdf"'
+
+        return response
+
+    except Exception as e:
+        messages.error(request, f'Erro ao gerar PDF: {str(e)}')
+        return redirect('naya_site:criar_ordem_servico', orcamento_id=orcamento.id)

@@ -4,159 +4,59 @@
 {% block title %}Atualizar Perfil{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="text-center">Atualizar Perfil</h2>
-                </div>
-                <div class="card-body">
-                    <!-- Mensagens -->
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
+<div class="form-wrapper">
 
-                    <form method="post">
-                        {% csrf_token %}
+    <h2>Atualizar Perfil</h2>
+
+        <!-- Mensagens -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form 
+        action="{{ form_action }}"
+        method="POST"
+        enctype="multipart/form-data"
+        >
+            {% csrf_token %}
+
+            <div class="form-content"> 
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label}}">{{ field.label }}</label>
+                        {{ field }}
+                        {{ field.errors }}
+
+                        {% if field.help_text %}
+                            <p class="help-text">{{ field.help_text }}</p>
+                        {% endif %}   
                         
-                        <h4>Dados Pessoais</h4>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">Nome</label>
-                                    {{ form.first_name }}
-                                    {% if form.first_name.errors %}
-                                        <div class="text-danger">{{ form.first_name.errors }}</div>
-                                    {% endif %}
-                                </div>
+                        {% if field.name == 'image' and field.value.url %}
+                            <div class="form-group">
+                                <img src="{{ field.value.url }}" alt="">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">Sobrenome</label>
-                                    {{ form.last_name }}
-                                    {% if form.last_name.errors %}
-                                        <div class="text-danger">{{ form.last_name.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                                    {{ form.username }}
-                                    {% if form.username.errors %}
-                                        <div class="text-danger">{{ form.username.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                                    {{ form.email }}
-                                    {% if form.email.errors %}
-                                        <div class="text-danger">{{ form.email.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.cpf.id_for_label }}" class="form-label">CPF</label>
-                            {{ form.cpf }}
-                            <div class="form-text">{{ form.cpf.help_text }}</div>
-                            {% if form.cpf.errors %}
-                                <div class="text-danger">{{ form.cpf.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <h4 class="mt-4">Endereço</h4>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="{{ form.cep.id_for_label }}" class="form-label">CEP</label>
-                                    {{ form.cep }}
-                                    {% if form.cep.errors %}
-                                        <div class="text-danger">{{ form.cep.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-8">
-                                <div class="mb-3">
-                                    <label for="{{ form.logradouro.id_for_label }}" class="form-label">Logradouro</label>
-                                    {{ form.logradouro }}
-                                    {% if form.logradouro.errors %}
-                                        <div class="text-danger">{{ form.logradouro.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="{{ form.numero.id_for_label }}" class="form-label">Número</label>
-                                    {{ form.numero }}
-                                    {% if form.numero.errors %}
-                                        <div class="text-danger">{{ form.numero.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-9">
-                                <div class="mb-3">
-                                    <label for="{{ form.complemento.id_for_label }}" class="form-label">Complemento</label>
-                                    {{ form.complemento }}
-                                    {% if form.complemento.errors %}
-                                        <div class="text-danger">{{ form.complemento.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.bairro.id_for_label }}" class="form-label">Bairro</label>
-                                    {{ form.bairro }}
-                                    {% if form.bairro.errors %}
-                                        <div class="text-danger">{{ form.bairro.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.cidade.id_for_label }}" class="form-label">Cidade</label>
-                                    {{ form.cidade }}
-                                    {% if form.cidade.errors %}
-                                        <div class="text-danger">{{ form.cidade.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.state.id_for_label }}" class="form-label">Estado</label>
-                            {{ form.state }}
-                            {% if form.state.errors %}
-                                <div class="text-danger">{{ form.state.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Atualizar Perfil</button>
-                            <a href="{% url 'naya_site:perfil' %}" class="btn btn-secondary">Voltar ao Perfil</a>
-                        </div>
-                    </form>
-                </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             </div>
-        </div>
-    </div>
-</div>
+
+            {% if form.non_field_errors %}
+                <div class="form-content">
+                <div class="form-group">
+                    <div class="message error">
+                    {{ form.non_field_errors }}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Atualizar Perfil</button>
+                <a href="{% url 'naya_site:perfil' %}" class="btn btn-secondary">Voltar ao Perfil</a>
+            </div>
+        </form>
 {% endblock %}

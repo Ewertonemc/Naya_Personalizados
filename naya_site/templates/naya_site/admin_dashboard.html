@@ -1,5 +1,6 @@
 {% extends 'global/base.html' %} 
 {% block content %}
+
 <div class="row">
     <div class="col-12">
         <h1 class="mb-4">
@@ -10,7 +11,7 @@
 
 <!-- Cards de Status -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card text-white bg-danger status-card h-100" onclick="scrollToSection('aguardando-resposta')">
             <div class="card-body text-center">
                 <i class="bi bi-clock-history display-4"></i>
@@ -19,7 +20,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card text-white bg-warning status-card h-100" onclick="scrollToSection('aguardando-cliente')">
             <div class="card-body text-center">
                 <i class="bi bi-person-check display-4"></i>
@@ -28,7 +29,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card text-white bg-success status-card h-100" onclick="scrollToSection('aprovados')">
             <div class="card-body text-center">
                 <i class="bi bi-check-circle display-4"></i>
@@ -37,41 +38,88 @@
             </div>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-primary status-card h-100" onclick="scrollToSection('em-producao')">
+            <div class="card-body text-center">
+                <i class="bi bi-gear display-4"></i>
+                <h2 class="mt-3">{{ em_producao }}</h2>
+                <p class="mb-0">Em Produção</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Tabela de Clientes -->
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-people"></i> Clientes</h5>
+        <h5 class="mb-0"><i class="bi bi-people"></i> Clientes Cadastrados</h5>
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover table-sm">
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Telefone</th>
-                        <th>Endereço</th>
-                        <th>Orçamentos</th>
+                        <th>Email</th>
+                        <th>Cidade/Estado</th>
+                        <th>Orç.</th>
+                        <th>Cad.</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for cliente in clientes %}
                     <tr>
-                        <td>{{ cliente.get_full_name|default:cliente.username }}</td>
-                        <td>{{ cliente.profile.telefone|default:"Não informado" }}</td>
-                        <td>{{ cliente.profile.endereco|default:"Não informado" }}</td>
                         <td>
+                            <strong>{{ cliente.get_full_name|default:cliente.username }}</strong>
+                        </td>
+                        <td>{{ cliente.email }}</td>
+                        <td>
+                            {% if cliente.profile and cliente.profile.cidade %}
+                                {{ cliente.profile.cidade }}
+                                {% if cliente.profile.state %}/{{ cliente.profile.state }}{% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
                             <span class="badge bg-primary">{{ cliente.orcamento_set.count }}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ cliente.date_joined|date:"d/m/Y" }}</small>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center text-muted">Nenhum cliente encontrado</td>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-people display-6 d-block"></i>
+                            Nenhum cliente cadastrado
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        
+        <!-- Resumo -->
+        <div class="mt-3 p-3 bg-light rounded">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <h4 class="text-primary mb-0">{{ clientes.count }}</h4>
+                    <small class="text-muted">Total Clientes</small>
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-success mb-0">{{ clientes_com_orcamento }}</h4>
+                    <small class="text-muted">Com Orçamentos</small>
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-info mb-0">{{ total_orcamentos }}</h4>
+                    <small class="text-muted">Total Orçamentos</small>
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-warning mb-0">{{ media_orcamentos|floatformat:1 }}</h4>
+                    <small class="text-muted">Média por Cliente</small>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -154,27 +202,110 @@
     </div>
     <div class="card-body">
         {% for orcamento in orcamentos_aprovados %}
-            <div class="orcamento-item verde">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>ID: {{ orcamento.id|truncatechars:8 }}</strong>
-                        <div class="cliente-info text-muted">
-                            Cliente: {{ orcamento.cliente.get_full_name|default:orcamento.cliente.username }}
-                        </div>
-                        <div class="cliente-info text-muted">
-                            Valor: R$ {{ orcamento.get_valor_final|floatformat:2 }} | 
-                            Entrega: {{ orcamento.data_prevista_entrega|date:"d/m/Y" }}
-                        </div>
-                    </div>
-                    <div>
-                        <a href="{% url 'naya_site:detalhe_orcamento' orcamento.id %}" class="btn btn-outline-success btn-sm">
-                            <i class="bi bi-eye"></i> Visualizar
-                        </a>
-                    </div>
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <div class="col-md-4">
+                    <strong>#{{ orcamento.id|truncatechars:8 }}</strong>
+                    <br>
+                    <small class="text-muted">{{ orcamento.cliente.get_full_name }}</small>
+                </div>
+                <div>
+                    <a href="{% url 'naya_site:criar_ordem_servico' orcamento.id %}" 
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-clipboard-check"></i> Criar OS
+                    </a>
                 </div>
             </div>
         {% empty %}
-            <p class="text-muted text-center">Nenhum orçamento aprovado.</p>
+            <p class="text-muted text-center">Nenhum orçamento aprovado</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Orçamentos Em Produção -->
+<div class="card mb-4" id="em-producao">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-gear"></i> 
+            Orçamentos Em Produção ({{ em_producao }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% for orcamento in orcamentos_producao %}
+            <div class="d-flex justify-content-between align-items-center mb-3 p-3 border rounded bg-light">
+                <div class="flex-grow-1">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>OS {{ orcamento.numero_os|default:"-" }}</strong>
+                            <br>
+                            <small class="text-muted">{{ orcamento.cliente.get_full_name }}</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small><strong>Iniciado em:</strong><br>
+                            {{ orcamento.data_inicio_producao|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small><strong>Previsão:</strong><br>
+                            {{ orcamento.data_prevista_entrega|date:"d/m/Y" }}</small>
+                        </div>
+                    </div>
+                    
+                    {% if orcamento.observacoes_producao %}
+                    <div class="mt-2">
+                        <small><strong>Observações:</strong> {{ orcamento.observacoes_producao|truncatechars:100 }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="ms-3">
+                    <a href="{% url 'naya_site:criar_ordem_servico' orcamento.id %}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-clipboard-check"></i> Ver OS
+                    </a>
+                    <a href="{% url 'naya_site:detalhe_orcamento' orcamento.id %}" 
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-eye"></i> Detalhes
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted text-center">Nenhum orçamento em produção</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Orçamentos Finalizados -->
+<div class="card mb-4" id="finalizados">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-flag-fill"></i> 
+            Orçamentos Finalizados ({{ finalizados }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% for orcamento in orcamentos_finalizados %}
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <div>
+                    <div class="col-md-4">
+                        <strong>OS {{ orcamento.numero_os|default:"-" }}</strong>
+                        <br>
+                        <small class="text-muted">{{ orcamento.cliente.get_full_name }}</small>
+                    </div>
+                    <small class="text-muted">
+                        Concluído em: {{ orcamento.data_conclusao_producao|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+                <div>
+                    <a href="{% url 'naya_site:criar_ordem_servico' orcamento.id %}" 
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-clipboard-check"></i> OS
+                    </a>
+                    <a href="{% url 'naya_site:detalhe_orcamento' orcamento.id %}" 
+                       class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-eye"></i> Ver
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted text-center">Nenhum orçamento finalizado</p>
         {% endfor %}
     </div>
 </div>

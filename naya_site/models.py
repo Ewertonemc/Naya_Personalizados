@@ -190,8 +190,63 @@ class Orcamento(models.Model):
     observacoes_cliente = models.TextField(blank=True)
     nao_possivel_prazo = models.BooleanField(default=False)
 
-    def __str__(self):
-        return f"Orçamento {self.id} - {self.cliente.get_full_name()}"
+    # CAMPOS DA ORDEM DE SERVIÇO (SEM DUPLICAÇÃO)
+    numero_os = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='Número da OS'
+    )
+    ordem_servico_criada = models.BooleanField(
+        default=False, verbose_name='OS Criada')
+    data_inicio_producao = models.DateTimeField(
+        null=True, blank=True, verbose_name='Início da Produção')
+    data_conclusao_producao = models.DateTimeField(
+        null=True, blank=True, verbose_name='Conclusão da Produção')
+    observacoes_producao = models.TextField(
+        blank=True, verbose_name='Observações da Produção')
+
+    def gerar_numero_os(self):
+        """Gera número da OS no formato: AAMMSSSS"""
+        from django.utils import timezone
+
+        ano = timezone.now().strftime('%y')  # Últimos 2 dígitos do ano
+        mes = timezone.now().strftime('%m')  # Mês com 2 dígitos
+
+        # Busca o último número sequencial do mês atual
+        ultima_os_mes = Orcamento.objects.filter(
+            numero_os__startswith=f"{ano}{mes}"
+        ).exclude(numero_os__isnull=True).order_by('-numero_os').first()
+
+        if ultima_os_mes and ultima_os_mes.numero_os:
+            # Incrementa a sequência do último número
+            ultima_sequencia = int(ultima_os_mes.numero_os[-4:])
+            nova_sequencia = ultima_sequencia + 1
+        else:
+            # Primeira OS do mês
+            nova_sequencia = 1
+
+        # Formata a sequência com 4 dígitos
+        sequencia = str(nova_sequencia).zfill(4)
+        numero_os = f"{ano}{mes}{sequencia}"
+
+        return numero_os
+
+    def criar_ordem_servico(self):
+        """Cria ordem de serviço com número padronizado"""
+        if not self.numero_os:
+            self.numero_os = self.gerar_numero_os()
+
+        self.ordem_servico_criada = True
+        self.data_inicio_producao = timezone.now()
+        self.status = StatusOrcamento.EM_PRODUCAO
+        self.save()
+
+    def concluir_producao(self):
+        self.data_conclusao_producao = timezone.now()
+        self.status = StatusOrcamento.FINALIZADO
+        self.save()
 
     def get_valor_final(self):
         return self.valor_total + self.valor_frete

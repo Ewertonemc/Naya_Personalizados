@@ -1,0 +1,318 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">
+                    <i class="bi bi-clipboard-check"></i> Ordem de Serviço
+                </h1>
+                <div class="btn-group">
+                    <a href="{% url 'naya_site:download_pdf_os' orcamento.id %}" class="btn btn-outline-primary" target="_blank">
+                        <i class="bi bi-file-pdf"></i> Gerar PDF
+                    </a>
+                    <a href="{% url 'naya_site:admin_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Controle de produção e acompanhamento</p>
+        </div>
+    </div>
+
+    <!-- Área para Impressão -->
+    <div id="conteudo-impressao">
+        <!-- Cabeçalho da OS -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4 class="mb-0">
+                            <i class="bi bi-clipboard-check"></i> 
+                            ORDEM DE SERVIÇO #{{ orcamento.numero_os|default:orcamento.id|truncatechars:8 }}
+                        </h4>
+                        {% if orcamento.numero_os %}
+                        <small class="opacity-75">
+                            Formato: {{ orcamento.numero_os|slice:":2" }} (ano) {{ orcamento.numero_os|slice:"2:4" }} (mês) {{ orcamento.numero_os|slice:"4:" }} (sequência)
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h5 class="mb-0">Nº OS: {{ orcamento.numero_os|default:"Pendente" }}</h5>
+                        <small>Data: {% now "d/m/Y H:i" %}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Informações do Cliente -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-person"></i> Dados do Cliente</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Nome:</strong> {{ orcamento.cliente.get_full_name|default:orcamento.cliente.username }}</p>
+                        <p><strong>Email:</strong> {{ orcamento.cliente.email }}</p>
+                        <p><strong>Telefone:</strong> 
+                            {% if orcamento.cliente.profile and orcamento.cliente.profile.cpf %}
+                                {{ orcamento.cliente.profile.cpf }}
+                            {% else %}
+                                Não informado
+                            {% endif %}
+                        </p>
+                        <p><strong>Endereço:</strong> 
+                            {% if orcamento.cliente.profile and orcamento.cliente.profile.logradouro %}
+                                {{ orcamento.cliente.profile.logradouro }}, {{ orcamento.cliente.profile.numero }}
+                                {% if orcamento.cliente.profile.complemento %} - {{ orcamento.cliente.profile.complemento }}{% endif %}
+                                <br>{{ orcamento.cliente.profile.bairro }} - {{ orcamento.cliente.profile.cidade }}/{{ orcamento.cliente.profile.state }}
+                                <br>CEP: {{ orcamento.cliente.profile.cep }}
+                            {% else %}
+                                Não informado
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações do Serviço -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações do Serviço</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Data do Orçamento:</strong> {{ orcamento.data_criacao|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Data Máxima Entrega:</strong> {{ orcamento.data_maxima_entrega|date:"d/m/Y" }}</p>
+                        <p><strong>Data Prevista:</strong> {{ orcamento.data_prevista_entrega|date:"d/m/Y" }}</p>
+                        <p><strong>Valor Total:</strong> <span class="fs-5 text-success fw-bold">R$ {{ orcamento.get_valor_final|floatformat:2 }}</span></p>
+                        
+                        {% if orcamento.ordem_servico_criada %}
+                            <p><strong>Início da Produção:</strong> {{ orcamento.data_inicio_producao|date:"d/m/Y H:i" }}</p>
+                        {% endif %}
+                        
+                        {% if orcamento.data_conclusao_producao %}
+                            <p><strong>Conclusão:</strong> {{ orcamento.data_conclusao_producao|date:"d/m/Y H:i" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Itens da OS -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> Itens para Produção</h5>
+            </div>
+            <div class="card-body">
+                {% for item in orcamento.itens.all %}
+                <div class="item-os border-bottom pb-3 mb-3">
+                    <div class="row">
+                        <div class="col-md-2">
+                            {% if item.produto.image %}
+                                <img src="{{ item.produto.image.url }}" class="img-fluid rounded" alt="{{ item.produto.name }}" style="max-height: 80px;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
+                                    <i class="bi bi-image text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-10">
+                            <h6 class="text-primary">{{ item.produto.name }}</h6>
+                            <p class="mb-1"><strong>Quantidade:</strong> {{ item.quantidade }}</p>
+                            <p class="mb-1"><strong>Personalização:</strong></p>
+                            <div class="bg-light p-2 rounded">
+                                {{ item.descricao_personalizacao|linebreaks }}
+                            </div>
+                            
+                            {% if item.arquivos.all %}
+                            <div class="mt-2">
+                                <strong>Arquivos de Referência:</strong>
+                                <div class="mt-1">
+                                    {% for arquivo in item.arquivos.all %}
+                                        <span class="badge bg-secondary me-1">
+                                            <i class="bi bi-file-earmark"></i> {{ arquivo.nome_original }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-chat-text"></i> Observações</h5>
+            </div>
+            <div class="card-body">
+                {% if orcamento.observacoes_cliente %}
+                <div class="mb-3">
+                    <strong>Observações do Cliente:</strong>
+                    <div class="bg-light p-3 rounded mt-1">
+                        {{ orcamento.observacoes_cliente|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if orcamento.observacoes_empresa %}
+                <div class="mb-3">
+                    <strong>Observações da Empresa:</strong>
+                    <div class="bg-light p-3 rounded mt-1">
+                        {{ orcamento.observacoes_empresa|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Formulário para observações da produção -->
+                {% if not orcamento.data_conclusao_producao %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="observacoes_producao" class="form-label">
+                            <strong>Observações da Produção:</strong>
+                        </label>
+                        <textarea class="form-control" id="observacoes_producao" 
+                                  name="observacoes_producao" rows="3"
+                                  placeholder="Registre observações importantes sobre a produção...">
+                            {{ orcamento.observacoes_producao }}
+                        </textarea>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Assinaturas (para impressão) -->
+        <div class="card d-print-block d-none">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-6">
+                        <div class="border-top pt-3 mt-3">
+                            <p>___________________________________</p>
+                            <p><strong>Responsável pela Produção</strong></p>
+                            <p>Naya Personalizados</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border-top pt-3 mt-3">
+                            <p>___________________________________</p>
+                            <p><strong>Conferência/Qualidade</strong></p>
+                            <p>Naya Personalizados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    {% if not orcamento.ordem_servico_criada %}
+    <div class="card border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-play-circle"></i> Iniciar Produção</h5>
+        </div>
+        <div class="card-body text-center">
+            <p class="mb-3">Ao criar a ordem de serviço, a produção será oficialmente iniciada.</p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-check-circle"></i> Criar Ordem de Serviço e Iniciar Produção
+                </button>
+            </form>
+        </div>
+    </div>
+    {% elif not orcamento.data_conclusao_producao %}
+    <div class="card border-success">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-check2-circle"></i> Produção em Andamento</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <p class="mb-3"><strong>Produção iniciada em:</strong> {{ orcamento.data_inicio_producao|date:"d/m/Y H:i" }}</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="concluir">
+                        <div class="mb-3">
+                            <label for="observacoes_producao" class="form-label">
+                                <strong>Observações Finais da Produção:</strong>
+                            </label>
+                            <textarea class="form-control" id="observacoes_producao" 
+                                      name="observacoes_producao" rows="3"
+                                      placeholder="Descreva o andamento e conclusão da produção...">
+                                {{ orcamento.observacoes_producao }}
+                            </textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check2-all"></i> Concluir Produção
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="bi bi-gear display-1 text-primary"></i>
+                    <p class="mt-2 text-muted">Produção em andamento</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-secondary">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-flag-fill"></i> Produção Concluída</h5>
+        </div>
+        <div class="card-body text-center">
+            <i class="bi bi-check2-circle display-1 text-success"></i>
+            <h4 class="text-success mt-3">Produção Concluída!</h4>
+            <p><strong>Data de conclusão:</strong> {{ orcamento.data_conclusao_producao|date:"d/m/Y H:i" }}</p>
+            
+            {% if orcamento.observacoes_producao %}
+            <div class="alert alert-info text-start">
+                <strong>Observações da produção:</strong><br>
+                {{ orcamento.observacoes_producao|linebreaks }}
+            </div>
+            {% endif %}
+            
+            <p class="text-muted">O cliente foi notificado sobre a conclusão.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para impressão
+function imprimirOS() {
+    window.print();
+}
+
+// Estilos para impressão
+const style = `
+    @media print {
+        .btn, .d-print-none, .card:not(.d-print-block) {
+            display: none !important;
+        }
+        .card {
+            border: 1px solid #000 !important;
+            break-inside: avoid;
+        }
+        body {
+            font-size: 12pt;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #000 !important;
+        }
+    }
+`;
+const styleSheet = document.createElement("style");
+styleSheet.innerText = style;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock %}

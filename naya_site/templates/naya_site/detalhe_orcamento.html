@@ -60,12 +60,14 @@
                     <span class="badge bg-warning status-badge">Aguardando Resposta</span>
                 {% elif orcamento.status == 'aguardando_cliente' %}
                     <span class="badge bg-info status-badge">Aguardando Sua Resposta</span>
-                {% elif orcamento.status == 'em_producao' %}
+                {% elif orcamento.status == 'aprovado' %}
+                    <span class="badge bg-success status-badge">Aprovado pelo Cliente</span>
+                {% elif orcamento.status == 'em_produção' %}
                     <span class="badge bg-primary status-badge">Em Produção</span>
                 {% elif orcamento.status == 'rejeitado' %}
                     <span class="badge bg-danger status-badge">Rejeitado</span>
                 {% elif orcamento.status == 'finalizado' %}
-                    <span class="badge bg-success status-badge">Finalizado</span>
+                    <span class="badge bg-secondary status-badge">Finalizado</span>
                 {% endif %}
                 
                 {% if orcamento.status == 'aguardando_cliente' %}
