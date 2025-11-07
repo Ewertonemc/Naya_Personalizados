@@ -260,10 +260,6 @@
                        class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-clipboard-check"></i> Ver OS
                     </a>
-                    <a href="{% url 'naya_site:detalhe_orcamento' orcamento.id %}" 
-                       class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-eye"></i> Detalhes
-                    </a>
                 </div>
             </div>
         {% empty %}
@@ -284,7 +280,7 @@
         {% for orcamento in orcamentos_finalizados %}
             <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                 <div>
-                    <div class="col-md-4">
+                    <div class="col-md-4-user">
                         <strong>OS {{ orcamento.numero_os|default:"-" }}</strong>
                         <br>
                         <small class="text-muted">{{ orcamento.cliente.get_full_name }}</small>
@@ -295,10 +291,6 @@
                 </div>
                 <div>
                     <a href="{% url 'naya_site:criar_ordem_servico' orcamento.id %}" 
-                       class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-clipboard-check"></i> OS
-                    </a>
-                    <a href="{% url 'naya_site:detalhe_orcamento' orcamento.id %}" 
                        class="btn btn-outline-info btn-sm">
                         <i class="bi bi-eye"></i> Ver
                     </a>

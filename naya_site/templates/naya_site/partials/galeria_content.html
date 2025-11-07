@@ -1,0 +1,35 @@
+<!-- Galeria de Imagens -->
+<div class="galeria">
+    {% for imagem in imagens %}
+    <div class="imagem-container">
+        <img src="{{ imagem.imagem.url }}" 
+            alt="{{ imagem.descricao }}"
+            data-categoria="{{ imagem.categoria.slug }}"
+            title="{{ imagem.descricao }}"
+            class="imagem-galeria">
+    </div>
+    {% empty %}
+    <div class="sem-imagens">
+        <p>Nenhuma imagem encontrada para esta categoria.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Paginação -->
+{% if imagens.has_other_pages %}
+<div class="paginacao">
+    {% if imagens.has_previous %}
+        <a href="#" class="pagina-link" data-page="1">Primeira</a>
+        <a href="#" class="pagina-link" data-page="{{ imagens.previous_page_number }}">Anterior</a>
+    {% endif %}
+
+    <span class="pagina-info">
+        Página {{ imagens.number }} de {{ imagens.paginator.num_pages }}
+    </span>
+
+    {% if imagens.has_next %}
+        <a href="#" class="pagina-link" data-page="{{ imagens.next_page_number }}">Próxima</a>
+        <a href="#" class="pagina-link" data-page="{{ imagens.paginator.num_pages }}">Última</a>
+    {% endif %}
+</div>
+{% endif %}

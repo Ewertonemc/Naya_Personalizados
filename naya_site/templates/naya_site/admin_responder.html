@@ -40,44 +40,51 @@
     {% csrf_token %}
     
     <!-- Itens Solicitados -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-box"></i> Itens Solicitados</h5>
-        </div>
-        <div class="card-body">
-            {% for item in orcamento.itens.all %}
-                <div class="item-card">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="produto-info">
-                                {% if item.produto.imagem %}
-                                    <img src="{{ item.produto.imagem.url }}" class="preview-imagem mb-2" alt="{{ item.produto.nome }}">
-                                {% endif %}
-                                <h6>{{ item.produto.nome }}</h6>
-                                <p class="text-muted mb-1">Categoria: {{ item.produto.categoria.nome }}</p>
-                                <p class="text-muted mb-1">Quantidade: {{ item.quantidade }}</p>
-                                <p class="text-muted">Preço Base: R$ {{ item.produto.preco_base|floatformat:2 }}</p>
+   <div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-box"></i> Itens Orçados</h5>
+    </div>
+    <div class="card-body">
+        {% for item in orcamento.itens.all %}
+            <div class="item-orcamento">
+                <div class="row">
+                    <div class="col-md-3">
+                        {% if item.produto.image %}
+                            <img src="{{ item.produto.image.url }}" class="img-fluid rounded border mb-2" 
+                                         alt="{{ item.produto.name }}" 
+                                         style="max-height: 150px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center product-image">
+                                <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
                             </div>
-                        </div>
-                        <div class="col-md-8">
-                            <h6>Personalização Solicitada:</h6>
-                            <div class="bg-light p-3 rounded mb-3">
-                                {{ item.descricao_personalizacao|linebreaks }}
-                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="text-primary">{{ item.produto.name }}</h6>
+                                <p class="text-muted mb-2">{{ item.produto.category.name }}</p>
+                                
+                                <div class="mb-3">
+                                    <strong>Personalização Solicitada:</strong>
+                                    <div class="bg-light p-3 rounded mt-2">{{ item.descricao_personalizacao|linebreaks }}</div>
+                                </div>
                             
                             <!-- Arquivos do Cliente -->
-                            {% if item.arquivos.all %}
-                                <h6>Arquivos Enviados pelo Cliente:</h6>
-                                <div class="mb-3">
-                                    {% for arquivo in item.arquivos.all %}
-                                        {% if arquivo.tipo == 'cliente' %}
-                                            <a href="{{ arquivo.arquivo.url }}" target="_blank" class="arquivo-cliente">
-                                                <i class="bi bi-file-earmark"></i> {{ arquivo.nome_original }}
-                                            </a>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+                            {% with item.arquivos.all as arquivos %}
+                                {% if arquivos %}
+                                    <h6>Arquivos Enviados pelo Cliente:</h6>
+                                    <div class="mb-3">
+                                        {% for arquivo in arquivos %}
+                                            {% if arquivo.tipo == 'cliente' %}
+                                                <a href="{{ arquivo.arquivo.url }}" target="_blank" class="d-block mb-1 text-decoration-none">
+                                                    <i class="bi bi-file-earmark"></i> {{ arquivo.nome_original }}
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
                             
                             <!-- Preço e Upload de Arquivos da Empresa -->
                             <div class="row">
@@ -87,13 +94,14 @@
                                            name="item_{{ item.id }}_preco" 
                                            class="form-control preco-input" 
                                            data-quantidade="{{ item.quantidade }}"
-                                           value="{{ item.preco_unitario|default:'' }}"
+                                           value="{{ item.preco_unitario|default:0 }}"
                                            required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Total do Item</label>
                                     <input type="text" class="form-control total-item" 
-                                           id="total_{{ item.id }}" readonly>
+                                           id="total_{{ item.id }}" readonly
+                                           value="R$ {{ item.preco_total|default:0|floatformat:2 }}">
                                 </div>
                             </div>
                             
@@ -108,6 +116,12 @@
                         </div>
                     </div>
                 </div>
+            {% empty %}
+                <div class="text-center py-4">
+                    <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+                    <h5 class="mt-3">Nenhum item encontrado neste orçamento</h5>
+                    <p class="text-muted">Verifique os dados do orçamento.</p>
+                </div>
             {% endfor %}
         </div>
     </div>
@@ -120,29 +134,67 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <div class="form-floating mb-3">
-                        {{ orcamento_form.valor_frete }}
-                        <label for="{{ orcamento_form.valor_frete.id_for_label }}">Valor do Frete (R$)</label>
+                    <div class="mb-3">
+                        <label for="valor_frete" class="form-label">Valor do Frete (R$)</label>
+                        <input type="number" step="0.01" min="0" 
+                               name="valor_frete" 
+                               id="valor_frete"
+                               class="form-control"
+                               value="{{ orcamento_form.valor_frete.value|default:0 }}"
+                               required>
+                        {% if orcamento_form.valor_frete.errors %}
+                            <div class="text-danger">
+                                {{ orcamento_form.valor_frete.errors }}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="form-floating mb-3">
-                        {{ orcamento_form.data_prevista_entrega }}
-                        <label for="{{ orcamento_form.data_prevista_entrega.id_for_label }}">Data Prevista de Entrega</label>
+                    <div class="mb-3">
+                        <label for="data_prevista_entrega" class="form-label">Data Prevista de Entrega</label>
+                        <input type="date" 
+                               name="data_prevista_entrega" 
+                               id="data_prevista_entrega"
+                               class="form-control"
+                               value="{{ orcamento_form.data_prevista_entrega.value|default:'' }}"
+                               required>
+                        {% if orcamento_form.data_prevista_entrega.errors %}
+                            <div class="text-danger">
+                                {{ orcamento_form.data_prevista_entrega.errors }}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             
-            <div class="form-floating mb-3">
-                {{ orcamento_form.observacoes_empresa }}
-                <label for="{{ orcamento_form.observacoes_empresa.id_for_label }}">Observações da Empresa</label>
+            <div class="mb-3">
+                <label for="observacoes_empresa" class="form-label">Observações da Empresa</label>
+                <textarea name="observacoes_empresa" 
+                          id="observacoes_empresa"
+                          class="form-control" 
+                          rows="4"
+                          placeholder="Digite as observações da empresa...">{{ orcamento_form.observacoes_empresa.value|default:'' }}</textarea>
+                {% if orcamento_form.observacoes_empresa.errors %}
+                    <div class="text-danger">
+                        {{ orcamento_form.observacoes_empresa.errors }}
+                    </div>
+                {% endif %}
             </div>
             
             <div class="form-check">
-                {{ orcamento_form.nao_possivel_prazo }}
-                <label class="form-check-label" for="{{ orcamento_form.nao_possivel_prazo.id_for_label }}">
+                <input type="checkbox" 
+                       name="nao_possivel_prazo" 
+                       id="nao_possivel_prazo"
+                       class="form-check-input"
+                       {% if orcamento_form.nao_possivel_prazo.value %}checked{% endif %}>
+                <label class="form-check-label" for="nao_possivel_prazo">
                     Não será possível atender este prazo
                 </label>
+                {% if orcamento_form.nao_possivel_prazo.errors %}
+                    <div class="text-danger">
+                        {{ orcamento_form.nao_possivel_prazo.errors }}
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -160,7 +212,7 @@
                         </tr>
                         <tr>
                             <td>Frete:</td>
-                            <td class="text-end">R$ <span id="valor-frete">0,00</span></td>
+                            <td class="text-end">R$ <span id="valor-frete-display">0,00</span></td>
                         </tr>
                         <tr class="table-success">
                             <td><strong>Total Geral:</strong></td>
@@ -193,58 +245,93 @@ function calcularTotais() {
     // Calcular total de cada item
     document.querySelectorAll('.preco-input').forEach(input => {
         const preco = parseFloat(input.value) || 0;
-        const quantidade = parseInt(input.dataset.quantidade);
+        const quantidade = parseInt(input.dataset.quantidade) || 0;
         const totalItem = preco * quantidade;
         
         // Atualizar campo total do item
         const itemId = input.name.match(/item_(\d+)_preco/)[1];
         const totalField = document.getElementById(`total_${itemId}`);
-        totalField.value = `R$ ${totalItem.toFixed(2)}`;
+        if (totalField) {
+            totalField.value = `R$ ${totalItem.toFixed(2)}`;
+        }
         
         subtotal += totalItem;
     });
     
     // Calcular frete
-    const frete = parseFloat(document.getElementById('{{ orcamento_form.valor_frete.id_for_label }}').value) || 0;
+    const freteInput = document.getElementById('valor_frete');
+    const frete = parseFloat(freteInput ? freteInput.value : 0) || 0;
     
     // Atualizar totais na tela
-    document.getElementById('subtotal-itens').textContent = subtotal.toFixed(2).replace('.', ',');
-    document.getElementById('valor-frete').textContent = frete.toFixed(2).replace('.', ',');
-    document.getElementById('total-geral').textContent = (subtotal + frete).toFixed(2).replace('.', ',');
+    const subtotalElement = document.getElementById('subtotal-itens');
+    const freteDisplayElement = document.getElementById('valor-frete-display');
+    const totalGeralElement = document.getElementById('total-geral');
+    
+    if (subtotalElement) subtotalElement.textContent = subtotal.toFixed(2).replace('.', ',');
+    if (freteDisplayElement) freteDisplayElement.textContent = frete.toFixed(2).replace('.', ',');
+    if (totalGeralElement) totalGeralElement.textContent = (subtotal + frete).toFixed(2).replace('.', ',');
 }
 
 // Eventos para recalcular
 document.addEventListener('input', function(e) {
-    if (e.target.classList.contains('preco-input') || e.target.id === '{{ orcamento_form.valor_frete.id_for_label }}') {
+    if (e.target.classList.contains('preco-input') || 
+        (e.target.id && e.target.id === 'valor_frete')) {
         calcularTotais();
     }
 });
 
 // Validação do formulário
-document.getElementById('resposta-form').addEventListener('submit', function(e) {
-    let preenchePrecos = true;
-    
-    document.querySelectorAll('.preco-input').forEach(input => {
-        if (!input.value || parseFloat(input.value) <= 0) {
-            preenchePrecos = false;
+const form = document.getElementById('resposta-form');
+if (form) {
+    form.addEventListener('submit', function(e) {
+        let preenchePrecos = true;
+        
+        document.querySelectorAll('.preco-input').forEach(input => {
+            if (!input.value || parseFloat(input.value) <= 0) {
+                preenchePrecos = false;
+                input.style.borderColor = '#dc3545';
+            } else {
+                input.style.borderColor = '';
+            }
+        });
+        
+        if (!preenchePrecos) {
+            e.preventDefault();
+            alert('Preencha o preço unitário para todos os itens.');
+            return false;
+        }
+        
+        const dataPrevistaInput = document.getElementById('data_prevista_entrega');
+        if (dataPrevistaInput && !dataPrevistaInput.value) {
+            e.preventDefault();
+            alert('Informe a data prevista de entrega.');
+            dataPrevistaInput.focus();
+            return false;
         }
     });
-    
-    if (!preenchePrecos) {
-        e.preventDefault();
-        alert('Preencha o preço unitário para todos os itens.');
-        return false;
-    }
-    
-    const dataPrevista = document.getElementById('{{ orcamento_form.data_prevista_entrega.id_for_label }}').value;
-    if (!dataPrevista) {
-        e.preventDefault();
-        alert('Informe a data prevista de entrega.');
-        return false;
-    }
-});
+}
 
 // Calcular totais ao carregar a página
-document.addEventListener('DOMContentLoaded', calcularTotais);
+document.addEventListener('DOMContentLoaded', function() {
+    calcularTotais();
+    
+    // Adicionar máscara para campos de preço
+    document.querySelectorAll('.preco-input').forEach(input => {
+        if (input) {
+            input.addEventListener('blur', function() {
+                if (this.value) {
+                    this.value = parseFloat(this.value).toFixed(2);
+                }
+            });
+        }
+    });
+});
+
+// Inicializar quando a página estiver totalmente carregada
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', calcularTotais);
+} else {
+    calcularTotais();
+}
 </script>
 {% endblock %}

@@ -25,7 +25,21 @@ h2 {
     font-size: 2.2rem;
     color: var(--cinza-escuro);
     text-align: center;
-    margin-bottom: 40px;
+}
+
+.card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.img-thumbnail {
+    border: 2px solid #dee2e6;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
 }
 
 .form-group img {
@@ -450,12 +464,56 @@ background: #28a745;
     border-radius: 15px;
     overflow: hidden;
 }
+
+.product-grid-user {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 40px;
+}
+
+.product-card {
+  background-color: var(--branco);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  transition: all 0.3s;
+  border-top: 4px solid var(--coral);
+}
+
+.product-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
 .product-image {
     max-width: 120px;
     max-height: 120px;
     object-fit: cover;
     border-radius: 8px;
 }
+
+.item-orcamento[style*="display: none"] {
+    display: none !important;
+}
+
+.item-removido {
+    opacity: 0.6;
+    background-color: #f8f9fa;
+    border-left: 4px solid #dc3545 !important;
+}
+
+.item-removido::before {
+    content: "⛔ REMOVIDO";
+    display: block;
+    background: #dc3545;
+    color: white;
+    padding: 2px 8px;
+    font-size: 0.7em;
+    border-radius: 3px;
+    margin-bottom: 5px;
+}
+
 
 @media (min-width: 768px) {
     h1 {
@@ -464,6 +522,11 @@ background: #28a745;
     
     h2 {
         font-size: 1.8rem;
+    }
+
+    .col-md-4-user {
+    flex: 0 0 auto;
+    width: 50%;
     }
     
     .container_header{

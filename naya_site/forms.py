@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from naya_site import models
-from .models import UserProfile, State, Orcamento, ItemOrcamento, Product
+from .models import UserProfile, State, Orcamento, ItemOrcamento, Product, ImagemGaleria, CategoriaGaleria
 import re
 
 
@@ -362,7 +362,7 @@ class ItemOrcamentoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['produto'].queryset = Product.objects.all()
+        self.fields['produto'].queryset = Product.objects.all().order_by('name')
         self.fields['produto'].empty_label = "Selecione um produto"
 
     def clean_produto(self):
@@ -400,4 +400,22 @@ class ItemRespostaForm(forms.ModelForm):
         fields = ['preco_unitario']
         widgets = {
             'preco_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+
+
+class UploadImagemForm(forms.ModelForm):
+    class Meta:
+        model = ImagemGaleria
+        fields = ['categoria', 'imagem', 'descricao', 'ordem']
+        widgets = {
+            'descricao': forms.TextInput(attrs={
+                'placeholder': 'Descrição da imagem...',
+                'class': 'form-control'
+            }),
+            'categoria': forms.Select(attrs={'class': 'form-control'}),
+            'ordem': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'value': 0
+            }),
+            'imagem': forms.FileInput(attrs={'class': 'form-control'})
         }

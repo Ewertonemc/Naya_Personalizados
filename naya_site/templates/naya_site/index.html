@@ -1,4 +1,7 @@
-{% extends 'global/base.html' %} {% block content %}
+{% extends 'global/base.html' %}
+{% load static %}
+
+{% block content %}
 <section id="home" class="home">
     <div class="container">
         <h1>Transforme ideias em <span class="destaque">produtos únicos</span></h1>
@@ -17,48 +20,58 @@
 </section>
 
 <section id="products" class="products">
-  <div class="container">
-    <h2>Nossos <span class="destaque">Produtos</span></h2>
-    <div class="product-grid">
-      <div class="product-card">
-        <div class="product-img">Copo Personalizado</div>
-        <div class="product-content">
-          <h3>Copos Personalizados</h3>
-          <p>
-            Copos de vidro, acrílico e cerâmica com estampas de alta qualidade e
-            resistentes.
-          </p>
-          <p class="price">A partir de R$ 25,00</p>
-          <a href="#" class="btn btn-primary">Personalizar Agora</a>
-        </div>
-      </div>
-
-      <div class="product-card">
-        <div class="product-img">Caneca Personalizada</div>
-        <div class="product-content">
-          <h3>Canecas Personalizadas</h3>
-          <p>
-            Canecas em diversos tamanhos e materiais para presentear ou usar no
-            dia a dia.
-          </p>
-          <p class="price">A partir de R$ 35,00</p>
-          <a href="#" class="btn btn-primary">Personalizar Agora</a>
-        </div>
-      </div>
-
-      <div class="product-card">
-        <div class="product-img">Tecido Personalizado</div>
-        <div class="product-content">
-          <h3>Tecidos Personalizados</h3>
-          <p>
-            Camisetas, toalhas, almofadas e muito mais com estampas exclusivas.
-          </p>
-          <p class="price">A partir de R$ 45,00</p>
-          <a href="#" class="btn btn-primary">Personalizar Agora</a>
-        </div>
-      </div>
+    <div>
+        <h2>Nossos <span class="destaque">Produtos</span></h2>
     </div>
-  </div>
+        <div class="container-galeria">
+            <div class="filtro-galeria">
+                <button class="btn-filtro active" data-categoria="todos">Todos</button>
+                {% for categoria in categorias %}
+                <button class="btn-filtro" data-categoria="{{ categoria.slug }}">
+                    {{ categoria.nome }}
+                </button>
+                {% endfor %}
+            </div>
+            <div id="galeria-content">
+                {% include 'naya_site/partials/galeria_content.html' %}
+            </div>
+        </div>
+
+    <div class="container">        
+        <div class="product-grid-user">
+        <div class="product-card">
+            <div class="product-img">Copo Personalizado</div>
+            <div class="product-content">
+            <h3>Copos Personalizados</h3>
+            <p>
+                Copos de vidro, acrílico e cerâmica com estampas de alta qualidade e
+                resistentes.
+            </p>
+            </div>
+        </div>
+
+        <div class="product-card">
+            <div class="product-img">Caneca Personalizada</div>
+            <div class="product-content">
+            <h3>Canecas Personalizadas</h3>
+            <p>
+                Canecas em diversos tamanhos e materiais para presentear ou usar no
+                dia a dia.
+            </p>
+            </div>
+        </div>
+
+        <div class="product-card">
+            <div class="product-img">Tecido Personalizado</div>
+            <div class="product-content">
+            <h3>Tecidos Personalizados</h3>
+            <p>
+                Camisetas, toalhas, almofadas e muito mais com estampas exclusivas.
+            </p>
+            </div>
+        </div>
+        </div>
+    </div>
 </section>
 
 <section class="features">
@@ -130,4 +143,19 @@
         </div>
     </div>
 </section>
+
+<!-- Modal -->
+<div id="modal">
+        <img src="" alt="Imagem ampliada">
+</div>
+
+<div class="btnfechar">
+    <img src="/media/uteis/botao_fechar.png" alt="Imagem ampliada">
+</div>
+
+
+<script src="{% static 'global/js/script.js'%}"></script>
+
+
 {% endblock %}
+

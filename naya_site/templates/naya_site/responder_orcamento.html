@@ -75,8 +75,10 @@
             <div class="item-orcamento">
                 <div class="row">
                     <div class="col-md-3">
-                        {% if item.produto.imagem %}
-                            <img src="{{ item.produto.imagem.url }}" class="product-image" alt="{{ item.produto.nome }}">
+                        {% if item.produto.image %}
+                            <img src="{{ item.produto.image.url }}" class="img-fluid rounded border mb-2" 
+                                         alt="{{ item.produto.name }}" 
+                                         style="max-height: 150px; object-fit: cover;">
                         {% else %}
                             <div class="bg-light rounded d-flex align-items-center justify-content-center product-image">
                                 <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
@@ -86,8 +88,8 @@
                     <div class="col-md-9">
                         <div class="row">
                             <div class="col-md-8">
-                                <h6 class="text-primary">{{ item.produto.nome }}</h6>
-                                <p class="text-muted mb-2">{{ item.produto.categoria.nome }}</p>
+                                <h6 class="text-primary">{{ item.produto.name }}</h6>
+                                <p class="text-muted mb-2">{{ item.produto.category.name }}</p>
                                 
                                 <div class="mb-3">
                                     <strong>Personalização Solicitada:</strong>

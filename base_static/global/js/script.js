@@ -166,17 +166,128 @@ function setupAutoSave() {
     });
 }
 
+function openModal() {
+    const modal = document.getElementById('modal');
+    if (!modal) return;
+    
+    document.querySelectorAll('.galeria img').forEach(img => {
+        img.onclick = () => {
+            const modalImg = document.querySelector('#modal img');
+            if (modalImg) modalImg.src = img.src;
+            modal.style.display = 'flex';
+        };
+    });
+    
+    document.querySelector('.btnfechar')?.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
 // Inicializar todas as funcionalidades
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM carregado - inicializando galeria");
+    
+    let categoriaAtual = 'todos';
+    let paginaAtual = 1;
+    const galeriaContent = document.getElementById('galeria-content');
+    
+    // Função principal para carregar galeria
+    function carregarGaleria(categoria = 'todos', pagina = 1) {
+        console.log(`Carregando galeria - Categoria: ${categoria}, Página: ${pagina}`);
+        
+        // Mostrar loading
+        galeriaContent.innerHTML = '<div class="loading">Carregando imagens...</div>';
+        
+        // Fazer requisição
+        fetch(`/carregar-galeria-ajax/?categoria=${categoria}&page=${pagina}`)
+            .then(response => {
+                console.log(`Status da resposta: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Dados recebidos:', data);
+                
+                if (data.status === 'success') {
+                    galeriaContent.innerHTML = data.html;
+                    categoriaAtual = data.categoria_atual;
+                    paginaAtual = data.pagina_atual;
+                    
+                    // Reativar eventos
+                    ativarEventos();
+                    console.log('Galeria carregada com sucesso!');
+                } else {
+                    throw new Error(data.message || 'Erro no servidor');
+                }
+            })
+            .catch(error => {
+                console.error('Erro detalhado:', error);
+                galeriaContent.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: red;">
+                        <h3>Erro ao carregar galeria</h3>
+                        <p>${error.message}</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px; margin: 10px;">
+                            Tentar Novamente
+                        </button>
+                    </div>
+                `;
+            });
+    }
+    
+    // Ativar todos os eventos
+    function ativarEventos() {
+        // Eventos dos filtros
+        document.querySelectorAll('.btn-filtro').forEach(botao => {
+            botao.onclick = (e) => {
+                e.preventDefault();
+                const categoria = botao.getAttribute('data-categoria');
+                document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('active'));
+                botao.classList.add('active');
+                carregarGaleria(categoria, 1);
+            };
+        });
+        
+        // Eventos da paginação
+        document.querySelectorAll('.pagina-link').forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                const pagina = link.getAttribute('data-page');
+                carregarGaleria(categoriaAtual, pagina);
+            };
+        });
+        
+        // Reativar modal
+        openModal();
+    }
+    
     validarDatas();
     setupCalculadora();
     animateStatusCards();
     setupConfirmations();
     setupAutoSave();
+
+    // Ativar eventos iniciais
+    ativarEventos();
+    
+    // Expor para debug
+    window.carregarGaleria = carregarGaleria;
+    window.categoriaAtual = categoriaAtual;
+    window.paginaAtual = paginaAtual;
     
     // Setup de tooltips do Bootstrap
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
+
+    
     });
 });
+

@@ -117,37 +117,38 @@
 <script>
 let formIndex = {{ item_formset|length }};
 
-// Função principal para carregar preview
+// Função para carregar preview do produto
 function carregarPreview(produtoId, index) {
-        
     const previewDiv = document.getElementById('produto-info-' + index);
-    if (!previewDiv) {
+    if (!previewDiv || !produtoId) {
+        if (previewDiv) previewDiv.style.display = 'none';
         return;
     }
 
-    if (!produtoId) {
-        previewDiv.style.display = 'none';
-        return;
-    }
-
-    // URL da API - TESTE AMBAS
-    const url1 = '/api/product/' + produtoId + '/';
-    const url2 = '/naya_site/api/product/' + produtoId + '/';
-        
-    // Tentar primeira URL
-    fetch(url1)
-        .then(response => {
-            if (response.ok) return response.json();
-            return fetch(url2).then(r => {
-                if (r.ok) return r.json();
-                throw new Error('Ambas URLs falharam');
-            });
-        })
+    const url = '/api/product/' + produtoId + '/';
+    
+    fetch(url)
+        .then(response => response.json())
         .then(data => {
-            mostrarPreview(data, previewDiv);
+            previewDiv.innerHTML = `
+                <div class="row align-items-center">
+                    <div class="col-3">
+                        <img src="${data.imagem || '/static/img/no-image.png'}" 
+                             class="img-fluid rounded border" 
+                             style="max-height: 70px; object-fit: cover;"
+                             onerror="this.src='/static/img/no-image.png'">
+                    </div>
+                    <div class="col-9">
+                        <h6 class="mb-1 text-primary"><strong>${data.nome}</strong></h6>
+                        <p class="mb-1 small text-muted"><strong>Categoria:</strong> ${data.categoria}</p>
+                        <p class="mb-0 text-success"><strong>R$ ${data.preco_base?.toFixed(2) || '0,00'}</strong></p>
+                    </div>
+                </div>
+            `;
+            previewDiv.style.display = 'block';
         })
         .catch(error => {
-            previewDiv.innerHTML = '<div class="alert alert-danger">Erro ao carregar produto</div>';
+            previewDiv.innerHTML = '<div class="alert alert-danger">Erro ao carregar</div>';
             previewDiv.style.display = 'block';
         });
 
@@ -155,127 +156,140 @@ function carregarPreview(produtoId, index) {
     previewDiv.style.display = 'block';
 }
 
-// Função para mostrar o preview
-function mostrarPreview(dados, div) {
-    const imagemUrl = dados.imagem || '/static/img/no-image.png';
-    const nome = dados.nome || 'Produto sem nome';
-    const categoria = dados.categoria || 'Sem categoria';
-    const preco = dados.preco_base ? 'R$ ' + dados.preco_base.toFixed(2) : 'R$ 0,00';
-
-    div.innerHTML = `
-        <div class="row align-items-center">
-            <div class="col-3">
-                <img src="${imagemUrl}" alt="${nome}" 
-                     class="img-fluid rounded border" 
-                     style="max-height: 70px; object-fit: cover;"
-                     onerror="this.src='/static/img/no-image.png'">
-            </div>
-            <div class="col-9">
-                <h6 class="mb-1 text-primary"><strong>${nome}</strong></h6>
-                <p class="mb-1 small text-muted"><strong>Categoria:</strong> ${categoria}</p>
-                <p class="mb-0 text-success"><strong>${preco}</strong></p>
-            </div>
-        </div>
-    `;
-    div.style.display = 'block';
-}
-
-// Função para adicionar item
+// FUNÇÃO ADICIONAR ITEM - SIMPLIFICADA
 function adicionarItem() {
     
     const container = document.getElementById('itens-container');
-    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
-    
-    if (!container) {
-        alert('Erro: Container não encontrado');
-        return;
-    }
-
     const itens = container.querySelectorAll('.item-orcamento');
+    
     if (itens.length === 0) {
         alert('Erro: Nenhum item para clonar');
         return;
     }
 
+    // Clonar o primeiro item
+    const novoItem = itens[0].cloneNode(true);
     const novoIndex = formIndex++;
-    const template = itens[0].cloneNode(true);
 
-    // Atualizar índices
-    template.setAttribute('data-form-index', novoIndex);
-    
-    // Atualizar names e IDs
-    template.querySelectorAll('[name]').forEach(campo => {
-        const nome = campo.getAttribute('name');
-        if (nome) {
-            const novoNome = nome.replace(/form-\d+/, 'form-' + novoIndex);
-            campo.setAttribute('name', novoNome);
-            campo.setAttribute('id', 'id_' + novoNome);
+    // Atualizar data-form-index
+    novoItem.setAttribute('data-form-index', novoIndex);
+
+    // Atualizar todos os names e IDs
+    novoItem.querySelectorAll('[name]').forEach(campo => {
+        const nomeAntigo = campo.getAttribute('name');
+        if (nomeAntigo) {
+            const nomeNovo = nomeAntigo.replace(/-(\d+)-/, `-${novoIndex}-`);
+            campo.setAttribute('name', nomeNovo);
+            campo.id = 'id_' + nomeNovo;
         }
     });
 
     // Limpar valores
-    template.querySelectorAll('input, select, textarea').forEach(campo => {
+    novoItem.querySelectorAll('input, select, textarea').forEach(campo => {
         if (campo.type !== 'hidden') {
             campo.value = '';
         }
     });
 
-    // Limpar preview
-    const preview = template.querySelector('.produto-info');
-    if (preview) {
-        preview.innerHTML = '';
-        preview.style.display = 'none';
-        preview.id = 'produto-info-' + novoIndex;
+    // Limpar e atualizar previews
+    const previewProduto = novoItem.querySelector('.produto-info');
+    if (previewProduto) {
+        previewProduto.innerHTML = '';
+        previewProduto.style.display = 'none';
+        previewProduto.id = 'produto-info-' + novoIndex;
     }
 
-    // Limpar preview de arquivos
-    const arquivosPreview = template.querySelector('[id^="arquivos-preview-"]');
-    if (arquivosPreview) {
-        arquivosPreview.innerHTML = '';
-        arquivosPreview.id = 'arquivos-preview-' + novoIndex;
+    const previewArquivos = novoItem.querySelector('[id^="arquivos-preview-"]');
+    if (previewArquivos) {
+        previewArquivos.innerHTML = '';
+        previewArquivos.id = 'arquivos-preview-' + novoIndex;
     }
 
-    container.appendChild(template);
-    totalForms.value = formIndex;
+    // Atualizar TOTAL_FORMS
+    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+    if (totalForms) {
+        totalForms.value = formIndex;
+    }
+
+    // Adicionar ao container
+    container.appendChild(novoItem);
 }
 
-// Função para remover item
-function removerItem(botao) {
-    const item = botao.closest('.item-orcamento');
-    const deleteInput = item.querySelector('input[name*="-DELETE"]');
+// FUNÇÃO REMOVER ITEM - SIMPLIFICADA
+function removerItem(button) {
     
-    if (deleteInput) {
-        deleteInput.checked = true;
-        item.style.display = 'none';
-    } else {
-        item.remove();
-        const totalForms = document.getElementById('id_form-TOTAL_FORMS');
-        totalForms.value = parseInt(totalForms.value) - 1;
+    if (!confirm('Tem certeza que deseja remover este item?')) {
+        return;
     }
+    
+    const item = button.closest('.item-orcamento');
+    if (!item) {
+        console.error('Item não encontrado');
+        return;
+    }
+    
+    // REMOVER COMPLETAMENTE em vez de ocultar
+    item.remove();
+    
+    // Atualizar o índice do formIndex se necessário
+    formIndex--;
 }
 
-// Configurar eventos quando página carregar
+// CONFIGURAÇÃO DOS EVENTOS - DIRETA
 document.addEventListener('DOMContentLoaded', function() {
-    // Botão adicionar
-    document.getElementById('btn-adicionar-item').addEventListener('click', adicionarItem);
 
-    // Evento para selects de produto
+    // 1. Botão Adicionar Item
+    const btnAdicionar = document.getElementById('btn-adicionar-item');
+    if (btnAdicionar) {
+        btnAdicionar.onclick = adicionarItem;
+    }
+
+    // 2. Evento para selects de produto (DELEGAÇÃO)
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('produto-select')) {
             const produtoId = e.target.value;
             const item = e.target.closest('.item-orcamento');
             const index = item ? item.getAttribute('data-form-index') : '0';
-            
             carregarPreview(produtoId, index);
         }
     });
 
-    // Evento para botões remover
+    // 3. Evento para botões remover (DELEGAÇÃO)
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('btn-remover-item')) {
             removerItem(e.target);
         }
     });
+
+    // 4. Validação do formulário
+    const form = document.getElementById('orcamento-form');
+    if (form) {
+        form.onsubmit = function(e) {
+            const itensVisiveis = document.querySelectorAll('.item-orcamento:not([style*="display: none"])');
+            
+            if (itensVisiveis.length === 0) {
+                e.preventDefault();
+                alert('❌ Adicione pelo menos um produto ao orçamento.');
+                return false;
+            }
+            
+            let todosComProduto = true;
+            itensVisiveis.forEach(item => {
+                const select = item.querySelector('.produto-select');
+                if (!select || !select.value) {
+                    todosComProduto = false;
+                }
+            });
+            
+            if (!todosComProduto) {
+                e.preventDefault();
+                alert('❌ Selecione um produto para todos os itens.');
+                return false;
+            }
+            
+            return true;
+        };
+    }
 });
 </script>
 {% endblock %}

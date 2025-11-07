@@ -1,0 +1,121 @@
+{% extends 'global/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>🎨 Gerenciar Galeria</h1>
+    
+    <!-- Botões de Ação -->
+    <div class="mb-4">
+        <a href="{% url 'naya_site:upload_imagem' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Adicionar Imagem
+        </a>
+        <a href="/admin/naya_site/imagemgaleria/add/" class="btn btn-primary" target="_blank">
+            <i class="fas fa-upload"></i> Upload Rápido (Admin)
+        </a>
+        <a href="/admin/naya_site/imagemgaleria/" class="btn btn-outline-secondary" target="_blank">
+            <i class="fas fa-cog"></i> Admin Completo
+        </a>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                    <h6>Total de Imagens</h6>
+                    <h3>{{ imagens.count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body text-center">
+                    <h6>Categorias</h6>
+                    <h3>{{ categorias.count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body text-center">
+                    <h6>Última Atualização</h6>
+                    <small>
+                        {% if imagens.first %}
+                            {{ imagens.first.data_upload|timesince }} atrás
+                        {% else %}
+                            Nenhuma imagem
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Imagens -->
+    <div class="card">        
+        <div class="card-body">
+            {% if imagens %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="80">Preview</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th width="120">Data</th>
+                            <th width="150" class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for imagem in imagens %}
+                        <tr>
+                            <td>
+                                <img src="{{ imagem.imagem.url }}" 
+                                     alt="{{ imagem.descricao }}"
+                                     class="product-image">
+                            </td>
+                            <td>
+                                <strong>{{ imagem.descricao }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ imagem.categoria.nome }}</span>
+                            </td>
+                            <td>
+                                <small>{{ imagem.data_upload|date:"d/m/Y" }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-action">
+                                    <a href="/admin/naya_site/imagemgaleria/{{ imagem.id }}/change/" 
+                                       class="btn btn-success"
+                                       target="_blank"
+                                       title="Editar">Editar
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'naya_site:deletar_imagem' imagem.id %}" 
+                                       class="btn btn-btn-danger"
+                                       onclick="return confirm('Tem certeza que deseja deletar permanentemente esta imagem?')"
+                                       title="Deletar">DEL
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Nenhuma imagem cadastrada</h4>
+                <p class="text-muted">Comece adicionando sua primeira imagem!</p>
+                <a href="{% url 'upload_imagem' %}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Adicionar Primeira Imagem
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

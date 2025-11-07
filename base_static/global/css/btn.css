@@ -14,6 +14,26 @@
     margin: 5px 5px 5px 95px!important;
 }
 
+.btn-action a{
+    margin: 3px;
+    width: 92px;
+    padding: 10px 20px;
+    border-radius: 10px;
+}
+
+.btn-btn-danger{
+    margin: 0 5px;
+    display: inline-block;
+    color: var(--clr-white);
+    font-weight: bold;
+    padding: 1rem 2rem;
+    border-radius: var(--default-border-radius);
+    cursor: pointer;
+    transition: filter var(--transition-fast) ease-in-out;
+    background-color: red;
+    color: white;
+}
+
 .btn:hover {
     filter: brightness(90%);
 }

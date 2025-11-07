@@ -287,7 +287,10 @@ class ArquivoOrcamento(models.Model):
     ]
 
     item_orcamento = models.ForeignKey(
-        ItemOrcamento, on_delete=models.CASCADE, related_name='arquivos')
+        ItemOrcamento,
+        on_delete=models.CASCADE,
+        related_name='arquivos'
+    )
     arquivo = models.FileField(upload_to='orcamentos/arquivos/')
     tipo = models.CharField(max_length=10, choices=TIPO_ARQUIVO)
     nome_original = models.CharField(max_length=255)
@@ -299,3 +302,35 @@ class ArquivoOrcamento(models.Model):
     class Meta:
         verbose_name = "Arquivo do Orçamento"
         verbose_name_plural = "Arquivos do Orçamento"
+
+
+class CategoriaGaleria(models.Model):
+    nome = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    ativa = models.BooleanField(default=True)
+    ordem = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Categoria da Galeria"
+        verbose_name_plural = "Categorias da Galeria"
+        ordering = ['ordem', 'nome']
+
+    def __str__(self):
+        return self.nome
+
+
+class ImagemGaleria(models.Model):
+    categoria = models.ForeignKey(CategoriaGaleria, on_delete=models.CASCADE)
+    imagem = models.ImageField(upload_to='galeria/')
+    descricao = models.CharField(max_length=200, blank=True)
+    data_upload = models.DateTimeField(auto_now_add=True)
+    ativa = models.BooleanField(default=True)
+    ordem = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Imagem da Galeria"
+        verbose_name_plural = "Imagens da Galeria"
+        ordering = ['ordem', '-data_upload']
+
+    def __str__(self):
+        return f"{self.categoria.nome} - {self.descricao}"
