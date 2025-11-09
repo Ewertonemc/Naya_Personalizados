@@ -21,32 +21,33 @@
     <!-- Estatísticas -->
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="card text-white bg-success">
+            <div class="card text-white bg-success status-card h-60">
                 <div class="card-body text-center">
                     <h6>Total de Imagens</h6>
-                    <h3>{{ imagens.count }}</h3>
+                    <h2 class="mt-3">{{ imagens.count }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-white bg-info">
+            <div class="card text-white bg-info status-card h-">
                 <div class="card-body text-center">
                     <h6>Categorias</h6>
-                    <h3>{{ categorias.count }}</h3>
+                    <h2 class="mt-3">{{ categorias.count }}</h2>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-primary">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary status-card h-60">
                 <div class="card-body text-center">
                     <h6>Última Atualização</h6>
-                    <small>
+                    <h5 class="mt-3">
                         {% if imagens.first %}
-                            {{ imagens.first.data_upload|timesince }} atrás
+                            {{ imagens.first.data_upload|timesince }} 
+                            <h6>atrás</h6>
                         {% else %}
                             Nenhuma imagem
                         {% endif %}
-                    </small>
+                    </h5>
                 </div>
             </div>
         </div>

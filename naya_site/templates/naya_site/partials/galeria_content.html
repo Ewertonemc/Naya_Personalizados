@@ -17,19 +17,21 @@
 
 <!-- Paginação -->
 {% if imagens.has_other_pages %}
-<div class="paginacao">
-    {% if imagens.has_previous %}
-        <a href="#" class="pagina-link" data-page="1">Primeira</a>
-        <a href="#" class="pagina-link" data-page="{{ imagens.previous_page_number }}">Anterior</a>
-    {% endif %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if imagens.has_previous %}
+                <a href="#" class="pagina" data-page="1">&laquo; First</a>
+                <a href="#" class="pagina" data-page="{{ imagens.previous_page_number }}">Previous</a>
+            {% endif %}
 
-    <span class="pagina-info">
-        Página {{ imagens.number }} de {{ imagens.paginator.num_pages }}
-    </span>
+            <span class="pagina-info">
+                Página {{ imagens.number }} de {{ imagens.paginator.num_pages }}
+            </span>
 
-    {% if imagens.has_next %}
-        <a href="#" class="pagina-link" data-page="{{ imagens.next_page_number }}">Próxima</a>
-        <a href="#" class="pagina-link" data-page="{{ imagens.paginator.num_pages }}">Última</a>
-    {% endif %}
-</div>
+            {% if imagens.has_next %}
+                <a href="#" class="pagina" data-page="{{ imagens.next_page_number }}">Next</a>
+                <a href="#" class="pagina" data-page="{{ imagens.paginator.num_pages }}">Last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
 {% endif %}

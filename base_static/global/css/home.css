@@ -10,7 +10,7 @@
     background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://placehold.co/1200x600/2D2D2D/FFFFFF/png?text=Naya+Personalizados');
     background-size: cover;
     background-position: center;
-    padding: 10vh 0;
+    padding: 16vh 0;
     text-align: center;
     color: var(--branco);
 }

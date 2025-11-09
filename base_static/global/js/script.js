@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Eventos da paginação
-        document.querySelectorAll('.pagina-link').forEach(link => {
+        document.querySelectorAll('.pagina').forEach(link => {
             link.onclick = (e) => {
                 e.preventDefault();
                 const pagina = link.getAttribute('data-page');
