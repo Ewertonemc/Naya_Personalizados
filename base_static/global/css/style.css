@@ -136,7 +136,7 @@ caption {
 
 .search-input {
     font-size: var(--small-font-size);
-    padding: .3rem 1rem;
+    padding: .5rem 1rem;
     width: 100%;
     max-width: 300rem;
     border-radius: var(--default-border-radius);
@@ -511,11 +511,6 @@ background: #28a745;
     .container_header{
         display: flex;
         flex-flow: row wrap;
-    }
-
-    .menu{
-        position: inherit;
-        right: 20px;
     }
 
     .menu-list {

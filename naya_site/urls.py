@@ -55,4 +55,5 @@ urlpatterns = [
     path('toggle-imagem/<int:imagem_id>/',
          views.toggle_imagem, name='toggle_imagem'),
     path('user/logout-auto/', AutoLogoutView.as_view(), name='logout_auto'),
+
 ]
