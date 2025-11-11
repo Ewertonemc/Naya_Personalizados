@@ -295,6 +295,10 @@ class ArquivoOrcamento(models.Model):
     tipo = models.CharField(max_length=10, choices=TIPO_ARQUIVO)
     nome_original = models.CharField(max_length=255)
     data_upload = models.DateTimeField(auto_now_add=True)
+    # NOVO CAMPO: para rastrear aprovação do cliente
+    aprovado_cliente = models.BooleanField(default=False)
+    observacoes_alteracao = models.TextField(
+        blank=True)  # Para solicitações de alteração
 
     def __str__(self):
         return f"{self.nome_original} - {self.get_tipo_display()}"

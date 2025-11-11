@@ -126,38 +126,97 @@ def detalhe_orcamento(request, orcamento_id):
 
 @login_required
 def responder_orcamento(request, orcamento_id):
-    """Cliente responde ao orçamento"""
+    """Cliente responde ao orçamento com seleção de artes"""
     orcamento = get_object_or_404(
         Orcamento, id=orcamento_id, cliente=request.user)
 
     if orcamento.status != StatusOrcamento.AGUARDANDO_CLIENTE:
         messages.error(
             request, 'Este orçamento não está aguardando sua resposta.')
-        return redirect('detalhe_orcamento', orcamento_id=orcamento_id)
+        return redirect('naya_site:detalhe_orcamento', orcamento_id=orcamento_id)
 
     if request.method == 'POST':
         acao = request.POST.get('acao')
 
         if acao == 'aprovar':
-            # Muda para APROVADO (não diretamente para EM_PRODUCAO)
+            # Processar artes aprovadas
+            artes_aprovadas_ids = request.POST.get('artes_aprovadas', '')
+            if artes_aprovadas_ids:
+                artes_aprovadas_ids = [
+                    int(id) for id in artes_aprovadas_ids.split(',') if id]
+
+                # Resetar todas as aprovações primeiro
+                ArquivoOrcamento.objects.filter(
+                    item_orcamento__orcamento=orcamento,
+                    tipo='empresa'
+                ).update(aprovado_cliente=False)
+
+                # Marcar as artes aprovadas
+                ArquivoOrcamento.objects.filter(
+                    id__in=artes_aprovadas_ids,
+                    item_orcamento__orcamento=orcamento,
+                    tipo='empresa'
+                ).update(aprovado_cliente=True)
+
+                # Verificar se todos os itens têm pelo menos uma arte aprovada
+                itens_sem_aprovacao = []
+                for item in orcamento.itens.all():
+                    artes_empresa = item.arquivos.filter(tipo='empresa')
+                    if artes_empresa.exists():
+                        tem_arte_aprovada = artes_empresa.filter(
+                            aprovado_cliente=True).exists()
+                        if not tem_arte_aprovada:
+                            itens_sem_aprovacao.append(item.produto.name)
+
+                if itens_sem_aprovacao:
+                    messages.error(
+                        request,
+                        f'Os seguintes produtos não têm artes aprovadas: {", ".join(itens_sem_aprovacao)}'
+                    )
+                    return redirect('naya_site:responder_orcamento', orcamento_id=orcamento_id)
+
             orcamento.status = StatusOrcamento.APROVADO
             orcamento.save()
             messages.success(
                 request,
-                'Orçamento aprovado! Aguarde a confirmação da produção.'
+                'Orçamento aprovado! As artes selecionadas entrarão em produção.'
             )
 
         elif acao == 'rejeitar':
+            motivo = request.POST.get('motivo_rejeicao', '')
+            orcamento.observacoes_cliente = f"Motivo da rejeição: {motivo}"
             orcamento.status = StatusOrcamento.REJEITADO
             orcamento.save()
             messages.info(request, 'Orçamento rejeitado.')
 
         elif acao == 'alterar':
-            observacoes = request.POST.get('observacoes_alteracao')
+            # Processar artes que serão mantidas
+            artes_manter_ids = request.POST.get('artes_manter', '')
+            observacoes = request.POST.get('observacoes_alteracao', '')
+
+            if artes_manter_ids:
+                artes_manter_ids = [int(id)
+                                    for id in artes_manter_ids.split(',') if id]
+
+                # Resetar todas as aprovações
+                ArquivoOrcamento.objects.filter(
+                    item_orcamento__orcamento=orcamento,
+                    tipo='empresa'
+                ).update(aprovado_cliente=False)
+
+                # Marcar apenas as artes que o cliente quer manter
+                ArquivoOrcamento.objects.filter(
+                    id__in=artes_manter_ids,
+                    item_orcamento__orcamento=orcamento,
+                    tipo='empresa'
+                ).update(aprovado_cliente=True)
+
+            # Salvar observações de alteração
             orcamento.observacoes_cliente = observacoes
             orcamento.status = StatusOrcamento.AGUARDANDO_RESPOSTA
             orcamento.save()
-            messages.info(request, 'Solicitação de alteração enviada.')
+            messages.info(
+                request, 'Solicitação de alteração enviada. Aguarde nossa resposta.')
 
         return redirect(
             'naya_site:detalhe_orcamento',

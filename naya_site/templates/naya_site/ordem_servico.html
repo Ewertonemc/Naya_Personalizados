@@ -102,6 +102,84 @@
             </div>
         </div>
 
+        <!-- Artes Aprovadas -->
+        {% if orcamento.status == 'aprovado' or orcamento.status == 'em_producao' or orcamento.status == 'finalizado' %}
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-check-circle"></i> Artes Aprovadas para Produção</h5>
+            </div>
+            <div class="card-body">
+                {% for item in orcamento.itens.all %}
+                    <div class="item-artes mb-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-box"></i> {{ item.produto.name }}
+                            <span class="badge bg-secondary">{{ item.quantidade }} un.</span>
+                        </h6>
+                        
+                        {% with item.arquivos.all as arquivos %}
+                            {% if arquivos %}
+                                <div class="row">
+                                    {% for arquivo in arquivos %}
+                                        {% if arquivo.tipo == 'empresa' and arquivo.aprovado_cliente %}
+                                        <div class="col-md-3 mb-3">
+                                            <div class="card h-100">
+                                                <div class="card-body text-center">
+                                                    <a href="{{ arquivo.arquivo.url }}" target="_blank" class="d-block mb-2">
+                                                        {% if arquivo.arquivo.url|lower|slice:'-4:' == '.pdf' %}
+                                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 120px;">
+                                                                <i class="bi bi-file-earmark-pdf text-danger display-4"></i>
+                                                            </div>
+                                                        {% else %}
+                                                            <img src="{{ arquivo.arquivo.url }}" 
+                                                                 class="img-fluid rounded border" 
+                                                                 alt="{{ arquivo.nome_original }}"
+                                                                 style="max-height: 120px; object-fit: contain;">
+                                                        {% endif %}
+                                                    </a>
+                                                    <small class="text-muted d-block">{{ arquivo.nome_original }}</small>
+                                                    <div class="mt-2">
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-check-circle"></i> Aprovada
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Verificar se há produtos sem artes aprovadas -->
+                                {% with artes_aprovadas=arquivos %}
+                                    {% for arquivo in artes_aprovadas %}
+                                        {% if arquivo.tipo == 'empresa' and arquivo.aprovado_cliente %}
+                                            <!-- Se encontrou pelo menos uma arte aprovada, não mostra alerta -->
+                                        {% endif %}
+                                    {% empty %}
+                                        <div class="alert alert-warning mt-2">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                            Nenhuma arte aprovada para este produto.
+                                        </div>
+                                    {% endfor %}
+                                {% endwith %}
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Nenhuma arte disponível para este produto.
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                {% endfor %}
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Informação:</strong> Estas são as artes que foram aprovadas pelo cliente e devem ser utilizadas na produção.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Itens da OS -->
         <div class="card mb-4">
             <div class="card-header">
@@ -128,18 +206,43 @@
                                 {{ item.descricao_personalizacao|linebreaks }}
                             </div>
                             
-                            {% if item.arquivos.all %}
-                            <div class="mt-2">
-                                <strong>Arquivos de Referência:</strong>
-                                <div class="mt-1">
-                                    {% for arquivo in item.arquivos.all %}
-                                        <span class="badge bg-secondary me-1">
-                                            <i class="bi bi-file-earmark"></i> {{ arquivo.nome_original }}
-                                        </span>
-                                    {% endfor %}
+                            <!-- Arquivos do Cliente -->
+                            {% with item.arquivos.all as arquivos %}
+                                {% if arquivos %}
+                                <div class="mt-2">
+                                    <strong>Arquivos de Referência do Cliente:</strong>
+                                    <div class="mt-1">
+                                        {% for arquivo in arquivos %}
+                                            {% if arquivo.tipo == 'cliente' %}
+                                            <a href="{{ arquivo.arquivo.url }}" target="_blank" class="badge bg-secondary me-1 mb-1 text-decoration-none">
+                                                <i class="bi bi-file-earmark"></i> {{ arquivo.nome_original }}
+                                            </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
                                 </div>
-                            </div>
-                            {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                            
+                            <!-- Todas as Artes da Empresa (para referência) -->
+                            {% with item.arquivos.all as arquivos %}
+                                {% if arquivos %}
+                                <div class="mt-2">
+                                    <strong>Todas as Artes Desenvolvidas:</strong>
+                                    <div class="mt-1">
+                                        {% for arquivo in arquivos %}
+                                            {% if arquivo.tipo == 'empresa' %}
+                                            <span class="badge {% if arquivo.aprovado_cliente %}bg-success{% else %}bg-light text-dark border{% endif %} me-1 mb-1">
+                                                <i class="bi bi-file-earmark{% if arquivo.aprovado_cliente %}-check{% endif %}"></i> 
+                                                {{ arquivo.nome_original }}
+                                                {% if arquivo.aprovado_cliente %}
+                                                    <i class="bi bi-check-circle"></i>
+                                                {% endif %}
+                                            </span>
+                                            {% endif %}
+                                        {% endfor %}
+                                {% endif %}
+                            {% endwith %}
                         </div>
                     </div>
                 </div>

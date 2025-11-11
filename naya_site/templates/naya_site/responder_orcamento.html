@@ -1,11 +1,12 @@
-{% extends 'global/base.html' %} {% block content %}
+{% extends 'global/base.html' %}
+{% block content %}
 <!-- Header do Orçamento -->
 <div class="orcamento-header text-center">
     <h1 class="mb-3">
         <i class="bi bi-clipboard-check"></i>
         Responder Orçamento #{{ orcamento.id|truncatechars:8 }}
     </h1>
-    <p class="mb-0 fs-5">Analise nossa proposta e escolha sua resposta</p>
+    <p class="mb-0 fs-5">Analise nossas artes e escolha sua resposta</p>
 </div>
 
 <!-- Informações do Orçamento -->
@@ -59,11 +60,99 @@
 
 <!-- Observações da Empresa -->
 {% if orcamento.observacoes_empresa %}
-<div class="observacoes-section">
-    <h5><i class="bi bi-chat-quote"></i> Observações da Empresa</h5>
-    <div class="mt-3">{{ orcamento.observacoes_empresa|linebreaks }}</div>
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-chat-quote"></i> Observações da Empresa</h5>
+    </div>
+    <div class="card-body">
+        {{ orcamento.observacoes_empresa|linebreaks }}
+    </div>
 </div>
 {% endif %}
+
+<!-- Seleção de Artes para Aprovação -->
+<div class="card mb-4" id="selecao-artes">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-images"></i> Seleção de Artes para Aprovação</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-4">Marque as artes que você aprova. Você pode selecionar uma ou mais artes por produto.</p>
+        
+        {% for item in orcamento.itens.all %}
+        <div class="item-artes mb-4 p-3 border rounded">
+            <h6 class="text-primary mb-3">
+                <i class="bi bi-box"></i> {{ item.produto.name }}
+                <span class="badge bg-secondary">{{ item.quantidade }} un.</span>
+            </h6>
+            
+            {% with item.arquivos.all as arquivos %}
+                <div class="row">
+                    {% for arquivo in arquivos %}
+                        {% if arquivo.tipo == 'empresa' %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 arte-card">
+                                <div class="card-body text-center">
+                                    <a href="{{ arquivo.arquivo.url }}" target="_blank" class="d-block mb-2">
+                                        {% if arquivo.arquivo.url|lower|slice:'-4:' == '.pdf' %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 120px;">
+                                                <i class="bi bi-file-earmark-pdf text-danger display-4"></i>
+                                            </div>
+                                        {% else %}
+                                            <img src="{{ arquivo.arquivo.url }}" 
+                                                 class="img-fluid rounded border arte-preview" 
+                                                 alt="{{ arquivo.nome_original }}"
+                                                 style="max-height: 120px; object-fit: contain;">
+                                        {% endif %}
+                                    </a>
+                                    <small class="text-muted d-block mb-2">{{ arquivo.nome_original }}</small>
+                                    
+                                    <!-- Checkbox para aprovação -->
+                                    <div class="form-check">
+                                        <input class="form-check-input arte-checkbox" 
+                                               type="checkbox" 
+                                               name="arte_aprovada" 
+                                               value="{{ arquivo.id }}"
+                                               data-item="{{ item.id }}"
+                                               id="arte_aprovada_{{ arquivo.id }}">
+                                        <label class="form-check-label" for="arte_aprovada_{{ arquivo.id }}">
+                                            Aprovar esta arte
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Checkbox para alteração (aparece no modal) -->
+                                    <div class="form-check d-none checkbox-alteracao">
+                                        <input class="form-check-input arte-alteracao-checkbox" 
+                                               type="checkbox" 
+                                               name="arte_manter" 
+                                               value="{{ arquivo.id }}"
+                                               data-item="{{ item.id }}"
+                                               id="arte_manter_{{ arquivo.id }}">
+                                        <label class="form-check-label" for="arte_manter_{{ arquivo.id }}">
+                                            Manter esta arte
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% empty %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Nenhuma arte enviada para este produto.
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endwith %}
+        </div>
+        {% endfor %}
+        
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Instruções:</strong> Selecione as artes que você aprova clicando em "Aprovar esta arte". 
+            Para artes que precisam de alterações, não marque a opção de aprovação.
+        </div>
+    </div>
+</div>
 
 <!-- Itens do Orçamento -->
 <div class="card mb-4">
@@ -72,7 +161,7 @@
     </div>
     <div class="card-body">
         {% for item in orcamento.itens.all %}
-            <div class="item-orcamento">
+            <div class="item-orcamento mb-4 pb-4 {% if not forloop.last %}border-bottom{% endif %}">
                 <div class="row">
                     <div class="col-md-3">
                         {% if item.produto.image %}
@@ -80,7 +169,7 @@
                                          alt="{{ item.produto.name }}" 
                                          style="max-height: 150px; object-fit: cover;">
                         {% else %}
-                            <div class="bg-light rounded d-flex align-items-center justify-content-center product-image">
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
                                 <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
                             </div>
                         {% endif %}
@@ -97,38 +186,22 @@
                                 </div>
                                 
                                 <!-- Arquivos do Cliente -->
-                                {% if item.arquivos.all %}
-                                    <div class="mb-3">
-                                        <strong>Seus Arquivos:</strong>
-                                        <div class="mt-2">
-                                            {% for arquivo in item.arquivos.all %}
-                                                {% if arquivo.tipo == 'cliente' %}
-                                                    <a href="{{ arquivo.arquivo.url }}" target="_blank" class="arquivo-link">
+                                {% with item.arquivos.all as arquivos %}
+                                    {% if arquivos %}
+                                        <div class="mb-3">
+                                            <strong>Seus Arquivos:</strong>
+                                            <div class="mt-2">
+                                                {% for arquivo in arquivos %}
+                                                    {% if arquivo.tipo == 'cliente' %}
+                                                    <a href="{{ arquivo.arquivo.url }}" target="_blank" class="btn btn-outline-secondary btn-sm me-2 mb-2">
                                                         <i class="bi bi-file-earmark"></i> {{ arquivo.nome_original }}
                                                     </a>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                
-                                <!-- Arquivos da Empresa -->
-                                {% for arquivo in item.arquivos.all %}
-                                    {% if arquivo.tipo == 'empresa' %}
-                                        {% if forloop.first %}
-                                            <div class="mb-3">
-                                                <strong>Proposta Visual da Empresa:</strong>
-                                                <div class="mt-2">
-                                        {% endif %}
-                                                    <a href="{{ arquivo.arquivo.url }}" target="_blank" class="arquivo-link arquivo-empresa">
-                                                        <i class="bi bi-file-earmark-image"></i> {{ arquivo.nome_original }}
-                                                    </a>
-                                        {% if forloop.last %}
-                                                </div>
+                                                    {% endif %}
+                                                {% endfor %}
                                             </div>
-                                        {% endif %}
+                                        </div>
                                     {% endif %}
-                                {% endfor %}
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 <div class="card border-primary">
@@ -152,33 +225,37 @@
 </div>
 
 <!-- Resumo Financeiro -->
-<div class="resumo-financeiro">
-    <div class="row">
-        <div class="col-md-8">
-            <h4 class="text-success mb-4">
-                <i class="bi bi-calculator"></i> Resumo Financeiro
-            </h4>
-            <table class="table table-lg">
-                <tbody>
-                    <tr>
-                        <td class="fs-5">Subtotal dos Itens:</td>
-                        <td class="text-end fs-5">R$ {{ orcamento.valor_total|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td class="fs-5">Frete:</td>
-                        <td class="text-end fs-5">R$ {{ orcamento.valor_frete|floatformat:2 }}</td>
-                    </tr>
-                    <tr class="table-success">
-                        <td class="fs-4 fw-bold">Total Geral:</td>
-                        <td class="text-end fs-4 fw-bold">R$ {{ orcamento.get_valor_final|floatformat:2 }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="col-md-4 d-flex align-items-center justify-content-center">
-            <div class="text-center">
-                <i class="bi bi-currency-dollar display-1 text-success"></i>
-                <p class="text-muted">Valor competitivo para sua personalização</p>
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h4 class="mb-0">
+            <i class="bi bi-calculator"></i> Resumo Financeiro
+        </h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <table class="table table-lg">
+                    <tbody>
+                        <tr>
+                            <td class="fs-5">Subtotal dos Itens:</td>
+                            <td class="text-end fs-5">R$ {{ orcamento.valor_total|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fs-5">Frete:</td>
+                            <td class="text-end fs-5">R$ {{ orcamento.valor_frete|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="table-success">
+                            <td class="fs-4 fw-bold">Total Geral:</td>
+                            <td class="text-end fs-4 fw-bold">R$ {{ orcamento.get_valor_final|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-4 d-flex align-items-center justify-content-center">
+                <div class="text-center">
+                    <i class="bi bi-currency-dollar display-1 text-success"></i>
+                    <p class="text-muted">Valor competitivo para sua personalização</p>
+                </div>
             </div>
         </div>
     </div>
@@ -194,21 +271,22 @@
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-md-4 mb-3">
-                        <form method="post" style="display: inline;">
+                        <form method="post" id="formAprovar">
                             {% csrf_token %}
                             <input type="hidden" name="acao" value="aprovar">
-                            <button type="submit" class="btn btn-success action-button w-100">
+                            <input type="hidden" name="artes_aprovadas" id="artes_aprovadas_input">
+                            <button type="submit" class="btn btn-success action-button w-100" id="btnAprovar">
                                 <i class="bi bi-check-circle display-6 d-block"></i>
                                 <strong>Aprovar</strong>
-                                <small class="d-block">Aceitar e iniciar produção</small>
+                                <small class="d-block">Aceitar artes selecionadas</small>
                             </button>
                         </form>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <button type="button" class="btn btn-warning action-button w-100" data-bs-toggle="modal" data-bs-target="#modalAlterar">
+                        <button type="button" class="btn btn-warning action-button w-100" data-bs-toggle="modal" data-bs-target="#modalAlterar" id="btnAlterar">
                             <i class="bi bi-pencil-square display-6 d-block"></i>
                             <strong>Solicitar Alteração</strong>
-                            <small class="d-block">Pedir mudanças na proposta</small>
+                            <small class="d-block">Pedir mudanças nas artes</small>
                         </button>
                     </div>
                     <div class="col-md-4 mb-3">
@@ -230,30 +308,44 @@
         <div class="modal-content">
             <div class="modal-header bg-warning text-dark">
                 <h5 class="modal-title">
-                    <i class="bi bi-pencil-square"></i> Solicitar Alteração
+                    <i class="bi bi-pencil-square"></i> Solicitar Alteração nas Artes
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post">
+            <form method="post" id="formAlterar">
                 {% csrf_token %}
                 <input type="hidden" name="acao" value="alterar">
+                <input type="hidden" name="artes_manter" id="artes_manter_input">
                 <div class="modal-body">
-                    <p class="alert alert-info">
+                    <!-- Resumo das Artes Selecionadas -->
+                    <div class="alert alert-info mb-3">
                         <i class="bi bi-info-circle"></i>
-                        Descreva detalhadamente as alterações que gostaria na proposta. 
-                        Sua solicitação será enviada para análise e você receberá uma nova resposta.
+                        <strong>Artes que serão mantidas:</strong>
+                        <div id="resumo-artes-manter" class="mt-2"></div>
+                    </div>
+                    
+                    <p class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Descreva detalhadamente as alterações necessárias nas artes <strong>NÃO SELECIONADAS</strong>. 
                     </p>
-                    <div class="form-floating">
+                    
+                    <div class="mb-3">
+                        <label for="observacoes_alteracao" class="form-label">
+                            <strong>Alterações Solicitadas:</strong>
+                        </label>
                         <textarea class="form-control" name="observacoes_alteracao" 
-                                  id="observacoes_alteracao" style="height: 150px;" 
-                                  placeholder="Descreva as alterações..." required></textarea>
-                        <label for="observacoes_alteracao">Alterações Solicitadas</label>
+                                  id="observacoes_alteracao" style="height: 200px;" 
+                                  placeholder="Descreva especificamente o que precisa ser alterado em cada arte não selecionada..." 
+                                  required></textarea>
+                        <div class="form-text">
+                            Seja específico: cores, textos, tamanhos, posicionamento, etc.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-send"></i> Enviar Solicitação
+                        <i class="bi bi-send"></i> Enviar Solicitação de Alteração
                     </button>
                 </div>
             </form>
@@ -307,46 +399,223 @@
 </div>
 {% endblock %}
 
-
 {% block extra_js %}
 <script>
-// Confirmação para aprovação
-document.querySelector('form[method="post"] button[type="submit"]').addEventListener('click', function(e) {
-    if (!confirm('Tem certeza que deseja aprovar este orçamento? Ele entrará em produção imediatamente.')) {
-        e.preventDefault();
+class GerenciadorArtes {
+    constructor() {
+        this.artesAprovadas = new Set();
+        this.artesManter = new Set();
+        this.init();
     }
-});
 
-// Validação do modal de alteração
-document.getElementById('modalAlterar').addEventListener('submit', function(e) {
-    const textarea = document.getElementById('observacoes_alteracao');
-    if (textarea.value.trim().length < 10) {
-        e.preventDefault();
-        alert('Por favor, descreva as alterações com pelo menos 10 caracteres.');
-        textarea.focus();
+    init() {
+        this.configurarEventos();
+        this.atualizarEstadoBotoes();
     }
-});
 
-// Animação dos botões
-document.querySelectorAll('.action-button').forEach(button => {
-    button.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-3px) scale(1.05)';
-    });
-    
-    button.addEventListener('mouseleave', function() {
-        this.style.transform = 'translateY(0) scale(1)';
-    });
-});
+    configurarEventos() {
+        // Eventos para checkboxes de aprovação
+        document.querySelectorAll('.arte-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.atualizarArtesAprovadas();
+                this.atualizarEstadoBotoes();
+            });
+        });
 
-// Contador de caracteres para textarea
-document.getElementById('observacoes_alteracao').addEventListener('input', function() {
-    const count = this.value.length;
-    const minimo = 10;
+        // Eventos para checkboxes de alteração
+        document.querySelectorAll('.arte-alteracao-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.atualizarArtesManter();
+                this.atualizarResumoAlteracao();
+            });
+        });
+
+        // Evento de abertura do modal de alteração
+        document.getElementById('modalAlterar').addEventListener('show.bs.modal', () => {
+            this.prepararModalAlteracao();
+        });
+
+        // Eventos de submissão dos formulários
+        document.getElementById('formAprovar').addEventListener('submit', (e) => {
+            if (!this.validarAprovacao()) {
+                e.preventDefault();
+                return;
+            }
+            this.prepararSubmissaoAprovacao();
+        });
+
+        document.getElementById('formAlterar').addEventListener('submit', (e) => {
+            if (!this.validarAlteracao()) {
+                e.preventDefault();
+                return;
+            }
+            this.prepararSubmissaoAlteracao();
+        });
+    }
+
+    atualizarArtesAprovadas() {
+        this.artesAprovadas.clear();
+        document.querySelectorAll('.arte-checkbox:checked').forEach(checkbox => {
+            this.artesAprovadas.add(checkbox.value);
+        });
+    }
+
+    atualizarArtesManter() {
+        this.artesManter.clear();
+        document.querySelectorAll('.arte-alteracao-checkbox:checked').forEach(checkbox => {
+            this.artesManter.add(checkbox.value);
+        });
+    }
+
+    atualizarEstadoBotoes() {
+        const btnAprovar = document.getElementById('btnAprovar');
+        const btnAlterar = document.getElementById('btnAlterar');
+        
+        const temArtesAprovadas = this.artesAprovadas.size > 0;
+        
+        if (temArtesAprovadas) {
+            btnAprovar.disabled = false;
+            btnAprovar.classList.remove('btn-secondary');
+            btnAprovar.classList.add('btn-success');
+            btnAprovar.querySelector('small').textContent = `Aprovar ${this.artesAprovadas.size} arte(s) selecionada(s)`;
+        } else {
+            btnAprovar.disabled = true;
+            btnAprovar.classList.remove('btn-success');
+            btnAprovar.classList.add('btn-secondary');
+            btnAprovar.querySelector('small').textContent = 'Selecione pelo menos uma arte para aprovar';
+        }
+        
+        // Verificar se há artes para possibilitar alteração
+        const totalArtes = document.querySelectorAll('.arte-checkbox').length;
+        
+        if (totalArtes > 0) {
+            btnAlterar.disabled = false;
+            btnAlterar.classList.remove('btn-secondary');
+            btnAlterar.classList.add('btn-warning');
+        } else {
+            btnAlterar.disabled = true;
+            btnAlterar.classList.remove('btn-warning');
+            btnAlterar.classList.add('btn-secondary');
+            btnAlterar.querySelector('small').textContent = 'Nenhuma arte disponível para alteração';
+        }
+    }
+
+    prepararModalAlteracao() {
+        // Mostrar checkboxes de alteração
+        document.querySelectorAll('.checkbox-alteracao').forEach(checkbox => {
+            checkbox.classList.remove('d-none');
+        });
+        
+        // Sincronizar checkboxes de alteração com os de aprovação
+        document.querySelectorAll('.arte-checkbox').forEach(checkbox => {
+            const alteracaoCheckbox = document.querySelector(`.arte-alteracao-checkbox[value="${checkbox.value}"]`);
+            if (alteracaoCheckbox) {
+                alteracaoCheckbox.checked = checkbox.checked;
+            }
+        });
+        
+        this.atualizarArtesManter();
+        this.atualizarResumoAlteracao();
+    }
+
+    atualizarResumoAlteracao() {
+        const resumo = document.getElementById('resumo-artes-manter');
+        if (this.artesManter.size === 0) {
+            resumo.innerHTML = '<span class="text-danger">Nenhuma arte selecionada para manter (todas serão alteradas)</span>';
+        } else {
+            const artesNomes = Array.from(this.artesManter).map(id => {
+                const checkbox = document.querySelector(`.arte-alteracao-checkbox[value="${id}"]`);
+                return checkbox ? checkbox.closest('.card').querySelector('small').textContent : `Arte ${id}`;
+            });
+            resumo.innerHTML = artesNomes.map(nome => `<div class="badge bg-success me-1 mb-1">${nome}</div>`).join('');
+        }
+    }
+
+    validarAprovacao() {
+        if (this.artesAprovadas.size === 0) {
+            alert('Por favor, selecione pelo menos uma arte para aprovar.');
+            return false;
+        }
+        
+        // Verificar se cada produto tem pelo menos uma arte aprovada
+        const itensComProblema = [];
+        document.querySelectorAll('.item-artes').forEach(item => {
+            const checkboxes = item.querySelectorAll('.arte-checkbox');
+            const aprovadas = item.querySelectorAll('.arte-checkbox:checked');
+            
+            if (checkboxes.length > 0 && aprovadas.length === 0) {
+                const produtoNome = item.querySelector('h6').textContent.split(' - ')[0].trim();
+                itensComProblema.push(produtoNome);
+            }
+        });
+        
+        if (itensComProblema.length > 0) {
+            alert(`Os seguintes produtos não têm artes aprovadas:\n${itensComProblema.join('\n')}\n\nPor favor, selecione pelo menos uma arte por produto ou solicite alterações.`);
+            return false;
+        }
+        
+        return confirm(`Você está prestes a aprovar ${this.artesAprovadas.size} arte(s).\n\nAs artes aprovadas entrarão em produção.\n\nConfirmar aprovação?`);
+    }
+
+    validarAlteracao() {
+        const observacoes = document.getElementById('observacoes_alteracao').value.trim();
+        
+        if (observacoes.length < 20) {
+            alert('Por favor, descreva detalhadamente as alterações necessárias (mínimo 20 caracteres).');
+            document.getElementById('observacoes_alteracao').focus();
+            return false;
+        }
+        
+        const totalArtes = document.querySelectorAll('.arte-checkbox').length;
+        const artesParaAlterar = totalArtes - this.artesManter.size;
+        
+        if (artesParaAlterar === 0) {
+            return confirm('Você selecionou manter todas as artes. Tem certeza que deseja solicitar alterações?');
+        }
+        
+        return confirm(`Você está solicitando alterações em ${artesParaAlterar} arte(s).\n\nAs artes selecionadas para manter serão aprovadas e as demais serão retrabalhadas.\n\nConfirmar solicitação?`);
+    }
+
+    prepararSubmissaoAprovacao() {
+        document.getElementById('artes_aprovadas_input').value = Array.from(this.artesAprovadas).join(',');
+    }
+
+    prepararSubmissaoAlteracao() {
+        document.getElementById('artes_manter_input').value = Array.from(this.artesManter).join(',');
+    }
+}
+
+// Inicializar quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    new GerenciadorArtes();
     
-    if (count < minimo) {
-        this.style.borderColor = '#dc3545';
-    } else {
-        this.style.borderColor = '#28a745';
+    // Animação dos botões
+    document.querySelectorAll('.action-button').forEach(button => {
+        if (!button.disabled) {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px) scale(1.02)';
+                this.style.transition = 'all 0.3s ease';
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        }
+    });
+
+    // Contador de caracteres para textarea de alteração
+    const textareaAlteracao = document.getElementById('observacoes_alteracao');
+    if (textareaAlteracao) {
+        textareaAlteracao.addEventListener('input', function() {
+            const count = this.value.length;
+            const minimo = 20;
+            
+            if (count < minimo) {
+                this.style.borderColor = '#dc3545';
+            } else {
+                this.style.borderColor = '#28a745';
+            }
+        });
     }
 });
 </script>

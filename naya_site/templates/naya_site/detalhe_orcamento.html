@@ -1,4 +1,4 @@
-{% extends 'global/base.html' %} 
+{% extends 'global/base.html' %}
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -161,6 +161,11 @@
                                                         Cliente
                                                     {% endif %}
                                                 </small>
+                                                {% if arquivo.tipo == 'empresa' and arquivo.aprovado_cliente %}
+                                                    <span class="badge bg-success ms-1">
+                                                        <i class="bi bi-check-circle"></i> Aprovada
+                                                    </span>
+                                                {% endif %}
                                             </a>
                                         </div>
                                     {% endfor %}
@@ -178,6 +183,48 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Seção de Artes Aprovadas -->
+{% if orcamento.status == 'aprovado' or orcamento.status == 'em_producao' or orcamento.status == 'finalizado' %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-check-circle"></i> Artes Aprovadas</h5>
+    </div>
+    <div class="card-body">
+        {% for item in orcamento.itens.all %}
+            <div class="mb-3">
+                <h6>{{ item.produto.name }}</h6>
+                
+                {% with has_approved_art=False %}
+                <div class="row">
+                    {% for arquivo in item.arquivos.all %}
+                        {% if arquivo.tipo == 'empresa' and arquivo.aprovado_cliente %}
+                            <div class="col-md-3 mb-2">
+                                <div class="card">
+                                    <a href="{{ arquivo.arquivo.url }}" target="_blank">
+                                        {% if arquivo.arquivo.url|lower|slice:'-4:' == '.pdf' %}
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-file-earmark-pdf text-danger display-4"></i>
+                                                <p class="small mt-2">{{ arquivo.nome_original }}</p>
+                                            </div>
+                                        {% else %}
+                                            <img src="{{ arquivo.arquivo.url }}" class="card-img-top" alt="{{ arquivo.nome_original }}" style="height: 150px; object-fit: contain;">
+                                        {% endif %}
+                                    </a>
+                                    <div class="card-footer small text-muted text-center">
+                                        Aprovada em {{ arquivo.data_upload|date:"d/m/Y" }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <!-- Resumo Financeiro -->
 {% if orcamento.valor_total > 0 %}
