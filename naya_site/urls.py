@@ -1,5 +1,6 @@
 from django.urls import path
 from naya_site import views
+from naya_site.views.security_views import AutoLogoutView
 
 app_name = 'naya_site'
 
@@ -53,4 +54,5 @@ urlpatterns = [
          views.deletar_imagem, name='deletar_imagem'),
     path('toggle-imagem/<int:imagem_id>/',
          views.toggle_imagem, name='toggle_imagem'),
+    path('user/logout-auto/', AutoLogoutView.as_view(), name='logout_auto'),
 ]

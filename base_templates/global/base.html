@@ -88,6 +88,114 @@
         <script src="{% static 'global/js/libras.js'%}"></script>
         <script>
             new window.VLibras.Widget("https://vlibras.gov.br/app");
+            
+            class AutoLogoutManager {
+                constructor() {
+                    this.heartbeatInterval = null;
+                    this.isLastTab = false;
+                    this.init();
+                }
+                
+                init() {
+                    this.setupTabTracking();
+                    this.setupHeartbeat();
+                    this.setupVisibilityDetection();
+                }
+                
+                setupTabTracking() {
+                    // Controle de abas usando sessionStorage
+                    const tabId = Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('currentTabId', tabId);
+                    
+                    // Registrar esta aba
+                    let openTabs = JSON.parse(sessionStorage.getItem('openTabs') || '[]');
+                    if (!openTabs.includes(tabId)) {
+                        openTabs.push(tabId);
+                        sessionStorage.setItem('openTabs', JSON.stringify(openTabs));
+                    }
+                    
+                    // Verificar se é a única aba
+                    this.checkIfLastTab();
+                    
+                    // Limpar ao fechar
+                    window.addEventListener('beforeunload', () => {
+                        this.handleTabClose(tabId);
+                    });
+                }
+                
+                setupHeartbeat() {
+                    // Enviar heartbeat a cada 30 segundos para manter sessão ativa
+                    this.heartbeatInterval = setInterval(() => {
+                        if (document.visibilityState === 'visible') {
+                            this.sendHeartbeat();
+                        }
+                    }, 30000);
+                }
+                
+                setupVisibilityDetection() {
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'hidden') {
+                            // Página não está visível
+                            this.checkIfLastTab();
+                        }
+                    });
+                }
+                
+                checkIfLastTab() {
+                    const openTabs = JSON.parse(sessionStorage.getItem('openTabs') || '[]');
+                    this.isLastTab = openTabs.length <= 1;
+                }
+                
+                handleTabClose(tabId) {
+                    let openTabs = JSON.parse(sessionStorage.getItem('openTabs') || '[]');
+                    openTabs = openTabs.filter(id => id !== tabId);
+                    sessionStorage.setItem('openTabs', JSON.stringify(openTabs));
+                    
+                    // Se era a última aba, fazer logout
+                    if (openTabs.length === 0) {
+                        this.performLogout();
+                    }
+                }
+                
+                sendHeartbeat() {
+                    // Manter a sessão ativa enquanto a aba estiver aberta
+                    fetch('/user/heartbeat/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': this.getCSRFToken(),
+                        },
+                    }).catch(() => {
+                        // Silenciosamente ignorar erros de heartbeat
+                    });
+                }
+                
+                performLogout() {
+                    if (this.logoutPerformed) return;
+                    this.logoutPerformed = true;
+                    
+                    console.log('🔐 Realizando logout automático...');
+                    
+                    fetch('/user/logout-auto/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': this.getCSRFToken(),
+                        },
+                    })
+                    .finally(() => {
+                        clearInterval(this.heartbeatInterval);
+                    });
+                }
+                
+                getCSRFToken() {
+                    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                }
+            }
+
+            // Inicializar quando a página carregar
+            document.addEventListener('DOMContentLoaded', () => {
+                new AutoLogoutManager();
+            });
+
         </script>
     </body>
 </html>

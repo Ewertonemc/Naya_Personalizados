@@ -8,6 +8,7 @@ static/
 media/
 local_settings.py
 comandos/
+gunicorn-error-log
 
 # Backup files #
 *.bak

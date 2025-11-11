@@ -131,13 +131,12 @@ caption {
 
 .search-form {
     padding: var(--spacing);
-    width: 100%;
-    max-width: 1200px;
+    width: 60%;
 }
 
 .search-input {
     font-size: var(--small-font-size);
-    padding: 1rem 2rem;
+    padding: .3rem 1rem;
     width: 100%;
     max-width: 300rem;
     border-radius: var(--default-border-radius);
@@ -179,7 +178,7 @@ caption {
 }
 
 .form-wrapper {
-    max-width: 60rem;
+    max-width: 30rem;
     margin: var(--spacing) auto;
 }
 

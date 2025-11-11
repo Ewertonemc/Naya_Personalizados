@@ -158,6 +158,7 @@ CACHES = {
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 try:
     from project.local_settings import *
