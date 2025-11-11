@@ -13,19 +13,20 @@ def is_admin(user):
 @login_required
 @user_passes_test(is_admin)
 def gerenciar_galeria(request):
-    categorias = CategoriaGaleria.objects.all()
-    imagens = ImagemGaleria.objects.all().order_by('-data_upload')
+    categoria_id = request.GET.get('categoria')
 
-    # Versão segura que funciona mesmo sem o campo 'ativa'
-    imagens_ativas_count = imagens.count()  # Por enquanto, todas estão ativas
+    if categoria_id:
+        imagens = ImagemGaleria.objects.filter(categoria_id=categoria_id)
+        categoria_atual = int(categoria_id)
+    else:
+        imagens = ImagemGaleria.objects.all()
+        categoria_atual = None
 
     context = {
-        'categorias': categorias,
         'imagens': imagens,
-        'imagens_ativas_count': imagens_ativas_count,
-        'site_title': 'Gerenciar Galeria',
+        'categorias': CategoriaGaleria.objects.all(),
+        'categoria_atual': categoria_atual,
     }
-
     return render(request, 'naya_site/gerenciar_galeria.html', context)
 
 
