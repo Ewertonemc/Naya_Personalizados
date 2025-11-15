@@ -477,7 +477,7 @@ class GerenciadorArtes {
             btnAprovar.disabled = false;
             btnAprovar.classList.remove('btn-secondary');
             btnAprovar.classList.add('btn-success');
-            btnAprovar.querySelector('small').textContent = `Aprovar ${this.artesAprovadas.size} arte(s) selecionada(s)`;
+            btnAprovar.querySelector('small').textContent = `${this.artesAprovadas.size} arte(s) selecionada(s)`;
         } else {
             btnAprovar.disabled = true;
             btnAprovar.classList.remove('btn-success');
